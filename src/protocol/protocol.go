@@ -5,7 +5,8 @@ import (
     "encoding/binary"
 )
 
-const HeaderLen int32 = 16 + 16 + 8
+const HeaderLen uint16 = 2 + 2 + 1
+const CRC16Len uint16 = 2
 
 type MsgHeader struct {
     Magic uint16
@@ -14,6 +15,7 @@ type MsgHeader struct {
 }
 
 type LoginRequest struct {
+
 }
 
 func CheckCrc16(buff []byte) bool {
@@ -28,4 +30,9 @@ func (msgHeader * MsgHeader)Decode(buff []byte)  {
     binary.Read(reader, binary.BigEndian, &msgHeader.Magic)
     binary.Read(reader, binary.BigEndian, &msgHeader.MsgLen)
     binary.Read(reader, binary.BigEndian, &msgHeader.Cmd)
+    msgHeader.MsgLen += 2
+}
+
+func (msg * LoginRequest)Decode(buff []byte)  {
+    //reader := bytes.NewReader(buff)
 }

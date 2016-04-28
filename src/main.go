@@ -16,54 +16,89 @@ type Detector struct {
     onn net.Conn
 }
 
+func onDetectorLogin(detetctor Detector, request protocol.LoginRequest) {
+
+}
+
 func handleMsg(detector Detector, cmd uint8, msg []byte)  {
-    fmt.Println(msg)
+    fmt.Println("recv request, cmd:", cmd, msg)
+    switch cmd {
+    case 1: {
+        reqest := protocol.LoginRequest{};
+        reqest.Decode(msg)
+        onDetectorLogin(detector, reqest)
+        break;
+    }
+    case 2: {
+        break;
+    }
+    case 3: {
+        break;
+    }
+    }
 }
 
 func handleConn(conn net.Conn) {
     defer conn.Close()
     detector := Detector {0, "", 0, 0, 0, conn}
     buff := make([]byte, 1024 * 32)
-    var buffUsed int32 = 0;
-    var msgSize int32 = 0
+    var buffUsed uint16 = 0;
     header := protocol.MsgHeader{}
     for {
         len, err := conn.Read(buff[buffUsed:])
         if err != nil {
+            fmt.Println("recv data err", err)
+            return;
         }
-        buffUsed += int32(len)
-        if header.MsgLen == 0 {
-            if buffUsed >= protocol.HeaderLen {
-                header.Decode(buff)
-                if header.Magic != 0xf9f9 {
-                    return
+        fmt.Println("recv data, len:", len)
+        buffUsed += uint16(len)
+        for {
+            if header.MsgLen == 0 {
+                if buffUsed >= protocol.HeaderLen {
+                    header.Decode(buff)
+                    if header.Magic != 0xf9f9 {
+                        fmt.Println("decode header, magic err", header.Magic)
+                        return
+                    }
+                    if header.MsgLen > uint16(cap(buff)) {
+                        fmt.Println("msg too big, size", header.MsgLen)
+                        return;
+                    }
+                    fmt.Println("decode header, msg len", header.MsgLen)
                 }
             }
-        } else if buffUsed >= msgSize {
-            if !protocol.CheckCrc16(buff) {
-                return
+            if header.MsgLen != 0 && buffUsed >= header.MsgLen {
+                if !protocol.CheckCrc16(buff) {
+                    return
+                }
+                handleMsg(detector, header.Cmd, buff[protocol.HeaderLen : header.MsgLen - protocol.CRC16Len])
+                copy(buff, buff[header.MsgLen:buffUsed])
+                buffUsed -= header.MsgLen
+                header.Magic = 0
+                header.MsgLen = 0
+                header.Cmd = 0
+            } else {
+                break;
             }
-            handleMsg(detector, header.Cmd, buff[:buffUsed])
-            copy(buff, buff[msgSize:])
-            buffUsed -= msgSize
-            header.Magic = 0
-            header.MsgLen = 0
-            header.Cmd = 0
         }
+
     }
 }
 
 func main()  {
-    listen, err := net.Listen("tcp", ":10000")
+    listen_address := ":10001"
+    listen, err := net.Listen("tcp", listen_address)
     if err != nil {
         return
     }
+    fmt.Println("server start, listen on", listen_address)
     defer listen.Close();
     for {
         conn, err := listen.Accept();
         if err != nil {
-
+            return
         }
+        fmt.Println("accept new connection")
         go handleConn(conn)
     }
     return
