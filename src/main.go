@@ -1,7 +1,8 @@
-package detector_server
+package main
 import (
     "net"
     "fmt"
+    "protocol"
 )
 
 
@@ -25,29 +26,29 @@ func handleConn(conn net.Conn) {
     buff := make([]byte, 1024 * 32)
     var buffUsed int32 = 0;
     var msgSize int32 = 0
-    header := MsgHeader{}
+    header := protocol.MsgHeader{}
     for {
         len, err := conn.Read(buff[buffUsed:])
         if err != nil {
         }
         buffUsed += int32(len)
-        if header.msgLen == 0 {
-            if buffUsed >= headerLen {
-                header.decode(buff)
-                if header.magic != 0xf9f9 {
+        if header.MsgLen == 0 {
+            if buffUsed >= protocol.HeaderLen {
+                header.Decode(buff)
+                if header.Magic != 0xf9f9 {
                     return
                 }
             }
         } else if buffUsed >= msgSize {
-            if !checkCrc16(buff) {
+            if !protocol.CheckCrc16(buff) {
                 return
             }
-            handleMsg(detector, header.cmd, buff[:buffUsed])
+            handleMsg(detector, header.Cmd, buff[:buffUsed])
             copy(buff, buff[msgSize:])
             buffUsed -= msgSize
-            header.magic = 0
-            header.msgLen = 0
-            header.cmd = 0
+            header.Magic = 0
+            header.MsgLen = 0
+            header.Cmd = 0
         }
     }
 }
