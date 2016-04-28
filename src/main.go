@@ -16,11 +16,12 @@ type Detector struct {
     onn net.Conn
 }
 
-func onDetectorLogin(detetctor Detector, request protocol.LoginRequest) {
-
+func onDetectorLogin(detetctor * Detector, request protocol.LoginRequest) {
+    fmt.Println("onDetectorLogin, request:", request)
+    detetctor.status = 1
 }
 
-func handleMsg(detector Detector, cmd uint8, msg []byte)  {
+func handleMsg(detector * Detector, cmd uint8, msg []byte)  {
     fmt.Println("recv request, cmd:", cmd, msg)
     switch cmd {
     case 1: {
@@ -71,7 +72,7 @@ func handleConn(conn net.Conn) {
                 if !protocol.CheckCrc16(buff) {
                     return
                 }
-                handleMsg(detector, header.Cmd, buff[protocol.HeaderLen : header.MsgLen - protocol.CRC16Len])
+                handleMsg(&detector, header.Cmd, buff[protocol.HeaderLen : header.MsgLen - protocol.CRC16Len])
                 copy(buff, buff[header.MsgLen:buffUsed])
                 buffUsed -= header.MsgLen
                 header.Magic = 0

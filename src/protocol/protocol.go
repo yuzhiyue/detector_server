@@ -12,9 +12,15 @@ type MsgHeader struct {
     Magic uint16
     MsgLen uint16
     Cmd uint8
+
 }
 
 type LoginRequest struct {
+    IMEI [8]byte
+    ProtoVer uint8
+}
+
+type LoginResponse struct {
 
 }
 
@@ -30,9 +36,11 @@ func (msgHeader * MsgHeader)Decode(buff []byte)  {
     binary.Read(reader, binary.BigEndian, &msgHeader.Magic)
     binary.Read(reader, binary.BigEndian, &msgHeader.MsgLen)
     binary.Read(reader, binary.BigEndian, &msgHeader.Cmd)
-    msgHeader.MsgLen += 2
+    msgHeader.MsgLen += 4
 }
 
 func (msg * LoginRequest)Decode(buff []byte)  {
-    //reader := bytes.NewReader(buff)
+    reader := bytes.NewReader(buff)
+    binary.Read(reader, binary.BigEndian, &msg.IMEI)
+    binary.Read(reader, binary.BigEndian, &msg.ProtoVer)
 }
