@@ -4,6 +4,7 @@ import (
     "bytes"
     "encoding/binary"
     "fmt"
+    "container/list"
 )
 
 const HeaderLen uint16 = 2 + 2 + 1
@@ -71,9 +72,15 @@ type LoginResponse struct {
     Reversed [2]byte
     Seq uint16
 }
-
-type HeartbeatRequest struct {
-
+type ReportInfo struct {
+    MAC [6]byte
+    Longitude int32
+    Atitude int32
+    Time uint32
+}
+type ReportRequest struct {
+    ReportList list.List
+    Seq uint16
 }
 
 func CheckCRC16(buff []byte) bool {
@@ -112,5 +119,18 @@ func (msg * LoginResponse)Encode() []byte {
     binary.Write(buf, binary.BigEndian, msg.Reversed)
     binary.Write(buf, binary.BigEndian, msg.Seq)
     return buf.Bytes()
+}
+
+func (msg * ReportRequest)Decode(buff []byte) {
+    reader := bytes.NewReader(buff)
+    for i := 0; i < len(buff) - 2; i += 18 {
+        info := new(ReportInfo)
+        binary.Read(reader, binary.BigEndian, &info.MAC)
+        binary.Read(reader, binary.BigEndian, &info.Longitude)
+        binary.Read(reader, binary.BigEndian, &info.Atitude)
+        binary.Read(reader, binary.BigEndian, &info.Time)
+        msg.ReportList.PushBack(info)
+    }
+    binary.Read(reader, binary.BigEndian, &msg.Seq)
 }
 

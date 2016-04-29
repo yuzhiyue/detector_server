@@ -8,8 +8,6 @@ import (
     "encoding/binary"
 )
 
-
-
 type Detector struct {
     Id int
     ProtoVer uint8
@@ -44,13 +42,20 @@ func onDetectorLogin(detector * Detector, request protocol.LoginRequest) {
     detector.SendMsg(1, buff)
 }
 
+func onReport(detector *Detector, request protocol.ReportRequest)  {
+    fmt.Println("onReport, request:", request)
+    for e := request.ReportList.Front(); e != nil; e = e.Next(){
+        fmt.Println(e.Value)
+    }
+}
+
 func handleMsg(detector * Detector, cmd uint8, msg []byte)  {
     fmt.Println("recv request, cmd:", cmd, msg)
     switch cmd {
     case 1: {
-        reqest := protocol.LoginRequest{};
-        reqest.Decode(msg)
-        onDetectorLogin(detector, reqest)
+        request := protocol.LoginRequest{};
+        request.Decode(msg)
+        onDetectorLogin(detector, request)
         break;
     }
     case 2: {
@@ -58,6 +63,9 @@ func handleMsg(detector * Detector, cmd uint8, msg []byte)  {
         break;
     }
     case 3: {
+        request := protocol.ReportRequest{};
+        request.Decode(msg)
+        onReport(detector, request)
         break;
     }
     }
