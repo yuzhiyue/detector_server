@@ -6,14 +6,15 @@ import (
     "time"
     "bytes"
     "encoding/binary"
+    "db"
 )
 
 type Detector struct {
     Id int
     ProtoVer uint8
     MAC string
-    Longitude float32
-    Atitude float32
+    Longitude int32
+    Atitude int32
     Status int
     conn net.Conn
 }
@@ -29,10 +30,14 @@ func (detector * Detector)SendMsg(cmd uint8, msg []byte)  {
     detector.conn.Write(buff.Bytes());
 }
 
-func onDetectorLogin(detector * Detector, request protocol.LoginRequest) {
+func OnDetectorLogin(detector * Detector, request protocol.LoginRequest) {
     fmt.Println("onDetectorLogin, request:", request)
+    detector.MAC = request.MAC
     detector.Status = 1
     detector.ProtoVer = request.ProtoVer
+
+    db.CreateDetector(request.MAC, request.IMEI)
+
     response := protocol.LoginResponse{}
     response.ProtoVer = request.ProtoVer
     response.Seq = request.Seq
@@ -42,11 +47,9 @@ func onDetectorLogin(detector * Detector, request protocol.LoginRequest) {
     detector.SendMsg(1, buff)
 }
 
-func onReport(detector *Detector, request protocol.ReportRequest)  {
+func OnReport(detector *Detector, request protocol.ReportRequest)  {
     fmt.Println("onReport, request:", request)
-    for e := request.ReportList.Front(); e != nil; e = e.Next(){
-        fmt.Println(e.Value)
-    }
+    db.SaveDetectorReport(detector.MAC, request.ReportList)
 }
 
 func handleMsg(detector * Detector, cmd uint8, msg []byte)  {
@@ -55,17 +58,18 @@ func handleMsg(detector * Detector, cmd uint8, msg []byte)  {
     case 1: {
         request := protocol.LoginRequest{};
         request.Decode(msg)
-        onDetectorLogin(detector, request)
+        OnDetectorLogin(detector, request)
         break;
     }
     case 2: {
         detector.SendMsg(2, nil)
+        db.UpdateDetector(detector.MAC, 0, 0)
         break;
     }
     case 3: {
         request := protocol.ReportRequest{};
         request.Decode(msg)
-        onReport(detector, request)
+        OnReport(detector, request)
         break;
     }
     }
@@ -121,6 +125,7 @@ func handleConn(conn net.Conn) {
 }
 
 func main()  {
+    db.InitDB()
     listen_address := ":10001"
     listen, err := net.Listen("tcp", listen_address)
     if err != nil {

@@ -5,6 +5,7 @@ import (
     "encoding/binary"
     "fmt"
     "container/list"
+    "bufio"
 )
 
 const HeaderLen uint16 = 2 + 2 + 1
@@ -48,8 +49,21 @@ func Crc16(bs []byte) (crc uint16) {
     for i := 0; i < l; i++ {
         crc = ((crc << 8) & 0xff00) ^ crc16tab[((crc>>8)&0xff)^uint16(bs[i])]
     }
-
     return
+}
+
+func byte2string(b []byte, startWithZero bool) string {
+    buff := bytes.NewBuffer(make([]byte, 0))
+    bw := bufio.NewWriter(buff)
+    for i,v := range b {
+        if i == 0 && !startWithZero {
+            fmt.Fprintf(bw, "%x", v)
+        } else {
+            fmt.Fprintf(bw, "%02x", v)
+        }
+    }
+    bw.Flush()
+    return buff.String()
 }
 
 type MsgHeader struct {
@@ -60,8 +74,8 @@ type MsgHeader struct {
 }
 
 type LoginRequest struct {
-    IMEI [8]byte
-    MAC [6]byte
+    IMEI string
+    MAC string
     ProtoVer uint8
     Seq uint16
 }
@@ -73,7 +87,7 @@ type LoginResponse struct {
     Seq uint16
 }
 type ReportInfo struct {
-    MAC [6]byte
+    MAC string
     Longitude int32
     Atitude int32
     Time uint32
@@ -106,8 +120,11 @@ func (msgHeader * MsgHeader)Decode(buff []byte)  {
 
 func (msg * LoginRequest)Decode(buff []byte)  {
     reader := bytes.NewReader(buff)
-    binary.Read(reader, binary.BigEndian, &msg.IMEI)
-    binary.Read(reader, binary.BigEndian, &msg.MAC)
+    var tmp [8]byte
+    binary.Read(reader, binary.BigEndian, tmp[:8])
+    msg.IMEI = byte2string(tmp[:8], false)
+    binary.Read(reader, binary.BigEndian, tmp[:6])
+    msg.MAC = byte2string(tmp[:6], true)
     binary.Read(reader, binary.BigEndian, &msg.ProtoVer)
     binary.Read(reader, binary.BigEndian, &msg.Seq)
 }
@@ -125,7 +142,9 @@ func (msg * ReportRequest)Decode(buff []byte) {
     reader := bytes.NewReader(buff)
     for i := 0; i < len(buff) - 2; i += 18 {
         info := new(ReportInfo)
-        binary.Read(reader, binary.BigEndian, &info.MAC)
+        var tmp [6]byte
+        binary.Read(reader, binary.BigEndian, tmp[:6])
+        info.MAC = byte2string(tmp[:6], true)
         binary.Read(reader, binary.BigEndian, &info.Longitude)
         binary.Read(reader, binary.BigEndian, &info.Atitude)
         binary.Read(reader, binary.BigEndian, &info.Time)
