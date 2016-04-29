@@ -3,22 +3,45 @@ import (
     "net"
     "fmt"
     "protocol"
+    "time"
+    "bytes"
+    "encoding/binary"
 )
 
 
 
 type Detector struct {
-    id int
-    mac string
-    longitude float32
-    atitude float32
-    status int
-    onn net.Conn
+    Id int
+    ProtoVer uint8
+    MAC string
+    Longitude float32
+    Atitude float32
+    Status int
+    conn net.Conn
 }
 
-func onDetectorLogin(detetctor * Detector, request protocol.LoginRequest) {
+func (detector * Detector)SendMsg(cmd uint8, msg []byte)  {
+    buff := new(bytes.Buffer)
+    binary.Write(buff, binary.BigEndian, uint16(0xf9f9))
+    binary.Write(buff, binary.BigEndian, uint16(len(msg)) + protocol.CRC16Len + protocol.HeaderLen - uint16(4))
+    binary.Write(buff, binary.BigEndian, cmd)
+    binary.Write(buff, binary.BigEndian, msg)
+    crc16 := protocol.GenCRC16(buff.Bytes())
+    binary.Write(buff, binary.BigEndian, crc16)
+    detector.conn.Write(buff.Bytes());
+}
+
+func onDetectorLogin(detector * Detector, request protocol.LoginRequest) {
     fmt.Println("onDetectorLogin, request:", request)
-    detetctor.status = 1
+    detector.Status = 1
+    detector.ProtoVer = request.ProtoVer
+    response := protocol.LoginResponse{}
+    response.ProtoVer = request.ProtoVer
+    response.Seq = request.Seq
+    response.Time = uint32(time.Now().Unix())
+    buff := response.Encode()
+    fmt.Println("response:", buff)
+    detector.SendMsg(1, buff)
 }
 
 func handleMsg(detector * Detector, cmd uint8, msg []byte)  {
@@ -31,6 +54,7 @@ func handleMsg(detector * Detector, cmd uint8, msg []byte)  {
         break;
     }
     case 2: {
+        detector.SendMsg(2, nil)
         break;
     }
     case 3: {
@@ -41,7 +65,8 @@ func handleMsg(detector * Detector, cmd uint8, msg []byte)  {
 
 func handleConn(conn net.Conn) {
     defer conn.Close()
-    detector := Detector {0, "", 0, 0, 0, conn}
+    detector := Detector {}
+    detector.conn = conn
     buff := make([]byte, 1024 * 32)
     var buffUsed uint16 = 0;
     header := protocol.MsgHeader{}
@@ -69,7 +94,8 @@ func handleConn(conn net.Conn) {
                 }
             }
             if header.MsgLen != 0 && buffUsed >= header.MsgLen {
-                if !protocol.CheckCrc16(buff) {
+                if !protocol.CheckCRC16(buff[:header.MsgLen]) {
+                    fmt.Println("check crc failed")
                     return
                 }
                 handleMsg(&detector, header.Cmd, buff[protocol.HeaderLen : header.MsgLen - protocol.CRC16Len])
