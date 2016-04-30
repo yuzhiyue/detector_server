@@ -44,7 +44,7 @@ func SaveDetectorReport(apMac string, reportInfos * list.List)  {
     for e := reportInfos.Front(); e != nil; e = e.Next(){
         info := e.Value.(*protocol.ReportInfo)
         fmt.Println(*info)
-        bulk.Insert(bson.M{"ap_mac":apMac, "device_mac":info.MAC, "longitude":info.Longitude, "atitude":info.Atitude, "mcc":info.Mcc, "mnc":info.Mnc,
+        bulk.Insert(bson.M{"ap_mac":apMac, "device_mac":info.MAC, "rssi":info.RSSI, "longitude":info.Longitude, "atitude":info.Atitude, "mcc":info.Mcc, "mnc":info.Mnc,
             "lac":info.Lac, "cell_id":info.CellId, "time":info.Time})
     }
     bulk.Run()
