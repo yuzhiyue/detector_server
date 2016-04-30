@@ -21,18 +21,21 @@ type Detector struct {
     conn net.Conn
 }
 
-func (detector * Detector)SendMsg(cmd uint8, msg []byte)  {
+func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
     buff := new(bytes.Buffer)
     binary.Write(buff, binary.BigEndian, uint16(0xf9f9))
     binary.Write(buff, binary.BigEndian, uint16(len(msg)) + protocol.CRC16Len + protocol.HeaderLen - uint16(4))
     binary.Write(buff, binary.BigEndian, cmd)
     binary.Write(buff, binary.BigEndian, msg)
+    if cmd != 2 {
+        binary.Write(buff, binary.BigEndian, seq)
+    }
     crc16 := protocol.GenCRC16(buff.Bytes())
     binary.Write(buff, binary.BigEndian, crc16)
     detector.conn.Write(buff.Bytes());
 }
 
-func OnDetectorLogin(detector * Detector, request * protocol.LoginRequest) {
+func OnDetectorLogin(cmd uint8, seq uint16, detector * Detector, request * protocol.LoginRequest) {
     log.Println("onDetectorLogin, request:", request)
     detector.MAC = request.MAC
     detector.Status = 1
@@ -42,51 +45,52 @@ func OnDetectorLogin(detector * Detector, request * protocol.LoginRequest) {
 
     response := protocol.LoginResponse{}
     response.ProtoVer = request.ProtoVer
-    response.Seq = request.Seq
     response.Time = uint32(time.Now().Unix())
     buff := response.Encode()
     log.Println("response:", buff)
-    detector.SendMsg(1, buff)
+    detector.SendMsg(cmd, seq, buff)
 }
 
-func OnReport(detector *Detector, request * protocol.ReportRequest)  {
+func OnReport(cmd uint8, seq uint16,detector *Detector, request * protocol.ReportRequest)  {
     if detector.Status != 1 {
         log.Println("invalid detector report")
         return
     }
     log.Println("onReport, request:", request)
     db.SaveDetectorReport(detector.MAC, &request.ReportList)
+    detector.SendMsg(cmd, seq, nil)
 }
 
-func OnDetectSelfReport(detector *Detector, request * protocol.DetectorSelfInfoReportRequest)  {
+func OnDetectSelfReport(cmd uint8, seq uint16, detector *Detector, request * protocol.DetectorSelfInfoReportRequest)  {
     log.Println("OnDetectSelfReport, request:", request)
     db.UpdateDetectorLocate(detector.MAC, request)
+    detector.SendMsg(cmd, seq, nil)
 }
 
-func handleMsg(detector * Detector, cmd uint8, msg []byte)  {
+func handleMsg(detector * Detector, cmd uint8, seq uint16, msg []byte)  {
     log.Println("recv request, cmd:", cmd, msg)
     switch cmd {
     case 1: {
         request := protocol.LoginRequest{};
         request.Decode(msg)
-        OnDetectorLogin(detector, &request)
+        OnDetectorLogin(cmd, seq, detector, &request)
         break;
     }
     case 2: {
-        detector.SendMsg(2, nil)
+        detector.SendMsg(cmd, 0, nil)
         db.UpdateDetectorLastActiveTime(detector.MAC, uint32(time.Now().Unix()))
         break;
     }
     case 3: {
         request := protocol.ReportRequest{};
         request.Decode(msg)
-        OnReport(detector, &request)
+        OnReport(cmd, seq, detector, &request)
         break;
     }
     case 4:{
         request := protocol.DetectorSelfInfoReportRequest{}
         request.Decode(msg)
-        OnDetectSelfReport(detector, &request)
+        OnDetectSelfReport(cmd, seq, detector, &request)
         break;
     }
     }
@@ -127,7 +131,16 @@ func handleConn(conn net.Conn) {
                     log.Println("check crc failed")
                     return
                 }
-                handleMsg(&detector, header.Cmd, buff[protocol.HeaderLen : header.MsgLen - protocol.CRC16Len])
+
+                if header.Cmd != 2 {
+                    var seq uint16 = 0
+                    reader := bytes.NewReader(buff[header.MsgLen - protocol.CRC16Len - protocol.SeqLen : header.MsgLen - protocol.CRC16Len])
+                    binary.Read(reader, binary.BigEndian, &seq)
+                    handleMsg(&detector, header.Cmd, seq, buff[protocol.HeaderLen : header.MsgLen - protocol.CRC16Len - protocol.SeqLen])
+                } else {
+                    handleMsg(&detector, header.Cmd, 0, buff[protocol.HeaderLen : header.MsgLen - protocol.CRC16Len])
+                }
+
                 copy(buff, buff[header.MsgLen:buffUsed])
                 buffUsed -= header.MsgLen
                 header.Magic = 0
@@ -148,8 +161,8 @@ func main()  {
         log.Println("Fail to find", "./log/detector_server.log", "cServer start Failed")
         os.Exit(1)
     }
-    //logFile.Close()
-    log.SetOutput(logFile)
+    logFile.Close()
+    //log.SetOutput(logFile)
     log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
     db.InitDB()

@@ -11,6 +11,8 @@ import (
 
 const HeaderLen uint16 = 2 + 2 + 1
 const CRC16Len uint16 = 2
+const SeqLen uint16 = 2
+
 var crc16tab = [256]uint16{
     0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
     0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
@@ -78,14 +80,12 @@ type LoginRequest struct {
     IMEI string
     MAC string
     ProtoVer uint8
-    Seq uint16
 }
 
 type LoginResponse struct {
     Time uint32
     ProtoVer uint8
     Reversed [2]byte
-    Seq uint16
 }
 type ReportInfo struct {
     MAC string
@@ -100,7 +100,6 @@ type ReportInfo struct {
 }
 type ReportRequest struct {
     ReportList list.List
-    Seq uint16
 }
 
 type DetectorSelfInfoReportRequest struct {
@@ -111,7 +110,6 @@ type DetectorSelfInfoReportRequest struct {
     Lac uint16
     CellId uint16
     Time uint32
-    Seq uint16
 }
 
 func CheckCRC16(buff []byte) bool {
@@ -143,7 +141,6 @@ func (msg * LoginRequest)Decode(buff []byte)  {
     binary.Read(reader, binary.BigEndian, tmp[:6])
     msg.MAC = byte2string(tmp[:6], true)
     binary.Read(reader, binary.BigEndian, &msg.ProtoVer)
-    binary.Read(reader, binary.BigEndian, &msg.Seq)
 }
 
 func (msg * LoginResponse)Encode() []byte {
@@ -151,7 +148,6 @@ func (msg * LoginResponse)Encode() []byte {
     binary.Write(buf, binary.BigEndian, msg.Time)
     binary.Write(buf, binary.BigEndian, msg.ProtoVer)
     binary.Write(buf, binary.BigEndian, msg.Reversed)
-    binary.Write(buf, binary.BigEndian, msg.Seq)
     return buf.Bytes()
 }
 
@@ -172,7 +168,6 @@ func (msg * ReportRequest)Decode(buff []byte) {
         binary.Read(reader, binary.BigEndian, &info.Time)
         msg.ReportList.PushBack(info)
     }
-    binary.Read(reader, binary.BigEndian, &msg.Seq)
 }
 
 func (msg * DetectorSelfInfoReportRequest)Decode(buff []byte) {
@@ -184,6 +179,5 @@ func (msg * DetectorSelfInfoReportRequest)Decode(buff []byte) {
     binary.Read(reader, binary.BigEndian, &msg.Lac)
     binary.Read(reader, binary.BigEndian, &msg.CellId)
     binary.Read(reader, binary.BigEndian, &msg.Time)
-    binary.Read(reader, binary.BigEndian, &msg.Seq)
 }
 
