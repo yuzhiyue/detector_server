@@ -6,6 +6,7 @@ import (
     "fmt"
     "container/list"
     "bufio"
+    "log"
 )
 
 const HeaderLen uint16 = 2 + 2 + 1
@@ -102,7 +103,7 @@ func CheckCRC16(buff []byte) bool {
     reader := bytes.NewReader(buff[len(buff)-2:])
     binary.Read(reader, binary.BigEndian, &crc16)
     crc16_cal := Crc16(buff[:len(buff)-2])
-    fmt.Printf("crc check:%d,%d\n", crc16, crc16_cal)
+    log.Printf("crc check:%d,%d\n", crc16, crc16_cal)
     return crc16 == crc16_cal
 }
 

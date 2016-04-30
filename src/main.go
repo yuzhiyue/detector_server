@@ -1,12 +1,15 @@
 package main
 import (
     "net"
-    "fmt"
     "protocol"
     "time"
     "bytes"
     "encoding/binary"
     "db"
+    "os"
+    "log"
+    "path/filepath"
+    "os/exec"
 )
 
 type Detector struct {
@@ -31,7 +34,7 @@ func (detector * Detector)SendMsg(cmd uint8, msg []byte)  {
 }
 
 func OnDetectorLogin(detector * Detector, request protocol.LoginRequest) {
-    fmt.Println("onDetectorLogin, request:", request)
+    log.Println("onDetectorLogin, request:", request)
     detector.MAC = request.MAC
     detector.Status = 1
     detector.ProtoVer = request.ProtoVer
@@ -43,17 +46,17 @@ func OnDetectorLogin(detector * Detector, request protocol.LoginRequest) {
     response.Seq = request.Seq
     response.Time = uint32(time.Now().Unix())
     buff := response.Encode()
-    fmt.Println("response:", buff)
+    log.Println("response:", buff)
     detector.SendMsg(1, buff)
 }
 
 func OnReport(detector *Detector, request protocol.ReportRequest)  {
-    fmt.Println("onReport, request:", request)
+    log.Println("onReport, request:", request)
     db.SaveDetectorReport(detector.MAC, request.ReportList)
 }
 
 func handleMsg(detector * Detector, cmd uint8, msg []byte)  {
-    fmt.Println("recv request, cmd:", cmd, msg)
+    log.Println("recv request, cmd:", cmd, msg)
     switch cmd {
     case 1: {
         request := protocol.LoginRequest{};
@@ -85,29 +88,29 @@ func handleConn(conn net.Conn) {
     for {
         len, err := conn.Read(buff[buffUsed:])
         if err != nil {
-            fmt.Println("recv data err", err)
+            log.Println("recv data err", err)
             return;
         }
-        fmt.Println("recv data, len:", len)
+        log.Println("recv data, len:", len)
         buffUsed += uint16(len)
         for {
             if header.MsgLen == 0 {
                 if buffUsed >= protocol.HeaderLen {
                     header.Decode(buff)
                     if header.Magic != 0xf9f9 {
-                        fmt.Println("decode header, magic err", header.Magic)
+                        log.Println("decode header, magic err", header.Magic)
                         return
                     }
                     if header.MsgLen > uint16(cap(buff)) {
-                        fmt.Println("msg too big, size", header.MsgLen)
+                        log.Println("msg too big, size", header.MsgLen)
                         return;
                     }
-                    fmt.Println("decode header, msg len", header.MsgLen)
+                    log.Println("decode header, msg len", header.MsgLen)
                 }
             }
             if header.MsgLen != 0 && buffUsed >= header.MsgLen {
                 if !protocol.CheckCRC16(buff[:header.MsgLen]) {
-                    fmt.Println("check crc failed")
+                    log.Println("check crc failed")
                     return
                 }
                 handleMsg(&detector, header.Cmd, buff[protocol.HeaderLen : header.MsgLen - protocol.CRC16Len])
@@ -125,20 +128,28 @@ func handleConn(conn net.Conn) {
 }
 
 func main()  {
+    logFile, logErr := os.OpenFile("./detector_server.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
+    if logErr != nil {
+        log.Println("Fail to find", "./log/detector_server.log", "cServer start Failed")
+        os.Exit(1)
+    }
+    log.SetOutput(logFile)
+    log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
     db.InitDB()
     listen_address := ":10001"
     listen, err := net.Listen("tcp", listen_address)
     if err != nil {
         return
     }
-    fmt.Println("server start, listen on", listen_address)
+    log.Println("server start, listen on", listen_address)
     defer listen.Close();
     for {
         conn, err := listen.Accept();
         if err != nil {
             return
         }
-        fmt.Println("accept new connection")
+        log.Println("accept new connection")
         go handleConn(conn)
     }
     return
