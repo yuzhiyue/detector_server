@@ -8,8 +8,6 @@ import (
     "db"
     "os"
     "log"
-    "path/filepath"
-    "os/exec"
 )
 
 type Detector struct {
