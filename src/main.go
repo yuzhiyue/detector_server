@@ -24,7 +24,7 @@ type Detector struct {
 func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
     buff := new(bytes.Buffer)
     binary.Write(buff, binary.BigEndian, uint16(0xf9f9))
-    binary.Write(buff, binary.BigEndian, uint16(len(msg)) + protocol.CRC16Len + protocol.HeaderLen - uint16(4))
+    binary.Write(buff, binary.BigEndian, uint16(len(msg)) + protocol.CRC16Len + protocol.HeaderLen + protocol.SeqLen - uint16(4))
     binary.Write(buff, binary.BigEndian, cmd)
     binary.Write(buff, binary.BigEndian, msg)
     if cmd != 2 {
@@ -161,8 +161,8 @@ func main()  {
         log.Println("Fail to find", "./log/detector_server.log", "cServer start Failed")
         os.Exit(1)
     }
-    logFile.Close()
-    //log.SetOutput(logFile)
+    //logFile.Close()
+    log.SetOutput(logFile)
     log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
     db.InitDB()
