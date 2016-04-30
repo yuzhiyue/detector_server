@@ -24,12 +24,12 @@ func InitDB()  {
 
 func CreateDetector(mac string, imei string) {
     c := session.DB("detector").C("detector_info")
-    c.UpsertId(mac, bson.M{"_id":mac, "imei":imei, "last_update_time":uint32(time.Now().Unix())})
+    c.UpsertId(mac, bson.M{"_id":mac, "imei":imei, "last_active_time":uint32(time.Now().Unix())})
 }
 
-func UpdateDetectorLastTime(mac string, time uint32)  {
+func UpdateDetectorLastActiveTime(mac string, time uint32)  {
     c := session.DB("detector").C("detector_info")
-    c.Update(bson.M{"_id":mac}, bson.M{"last_update_time":time})
+    c.Update(bson.M{"_id":mac}, bson.M{"last_active_time":time})
 }
 
 func UpdateDetectorLocate(mac string, info * protocol.DetectorSelfInfoReportRequest)  {

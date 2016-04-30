@@ -74,7 +74,7 @@ func handleMsg(detector * Detector, cmd uint8, msg []byte)  {
     }
     case 2: {
         detector.SendMsg(2, nil)
-        db.UpdateDetectorLastTime(detector.MAC, uint32(time.Now().Unix()))
+        db.UpdateDetectorLastActiveTime(detector.MAC, uint32(time.Now().Unix()))
         break;
     }
     case 3: {
@@ -148,6 +148,7 @@ func main()  {
         log.Println("Fail to find", "./log/detector_server.log", "cServer start Failed")
         os.Exit(1)
     }
+    //logFile.Close()
     log.SetOutput(logFile)
     log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
