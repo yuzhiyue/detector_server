@@ -8,7 +8,7 @@ import (
     "bufio"
     "log"
 )
-
+const MaxProtoVer = 1
 const HeaderLen uint16 = 2 + 2 + 1
 const CRC16Len uint16 = 2
 const SeqLen uint16 = 2
@@ -133,7 +133,7 @@ func (msgHeader * MsgHeader)Decode(buff []byte)  {
     msgHeader.MsgLen += 4
 }
 
-func (msg * LoginRequest)Decode(buff []byte)  {
+func (msg * LoginRequest)Decode(buff []byte) bool {
     reader := bytes.NewReader(buff)
     var tmp [8]byte
     binary.Read(reader, binary.BigEndian, tmp[:8])
@@ -141,6 +141,7 @@ func (msg * LoginRequest)Decode(buff []byte)  {
     binary.Read(reader, binary.BigEndian, tmp[:6])
     msg.MAC = byte2string(tmp[:6], true)
     binary.Read(reader, binary.BigEndian, &msg.ProtoVer)
+    return reader.Len() == 0
 }
 
 func (msg * LoginResponse)Encode() []byte {
@@ -151,7 +152,7 @@ func (msg * LoginResponse)Encode() []byte {
     return buf.Bytes()
 }
 
-func (msg * ReportRequest)Decode(buff []byte) {
+func (msg * ReportRequest)Decode(buff []byte) bool {
     reader := bytes.NewReader(buff)
     for i := 0; i < len(buff) - 2; i += 26 {
         info := new(ReportInfo)
@@ -168,9 +169,10 @@ func (msg * ReportRequest)Decode(buff []byte) {
         binary.Read(reader, binary.BigEndian, &info.Time)
         msg.ReportList.PushBack(info)
     }
+    return reader.Len() == 0
 }
 
-func (msg * DetectorSelfInfoReportRequest)Decode(buff []byte) {
+func (msg * DetectorSelfInfoReportRequest)Decode(buff []byte) bool {
     reader := bytes.NewReader(buff)
     binary.Read(reader, binary.BigEndian, &msg.Longitude)
     binary.Read(reader, binary.BigEndian, &msg.Atitude)
@@ -179,5 +181,6 @@ func (msg * DetectorSelfInfoReportRequest)Decode(buff []byte) {
     binary.Read(reader, binary.BigEndian, &msg.Lac)
     binary.Read(reader, binary.BigEndian, &msg.CellId)
     binary.Read(reader, binary.BigEndian, &msg.Time)
+    return reader.Len() == 0
 }
 

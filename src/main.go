@@ -44,7 +44,7 @@ func OnDetectorLogin(cmd uint8, seq uint16, detector * Detector, request * proto
     db.CreateDetector(request.MAC, request.IMEI)
 
     response := protocol.LoginResponse{}
-    response.ProtoVer = request.ProtoVer
+    response.ProtoVer = protocol.MaxProtoVer
     response.Time = uint32(time.Now().Unix())
     buff := response.Encode()
     log.Println("response:", buff)
@@ -67,12 +67,14 @@ func OnDetectSelfReport(cmd uint8, seq uint16, detector *Detector, request * pro
     detector.SendMsg(cmd, seq, nil)
 }
 
-func handleMsg(detector * Detector, cmd uint8, seq uint16, msg []byte)  {
+func handleMsg(detector * Detector, cmd uint8, seq uint16, msg []byte) bool {
     log.Println("recv request, cmd:", cmd, msg)
     switch cmd {
     case 1: {
         request := protocol.LoginRequest{};
-        request.Decode(msg)
+        if !request.Decode(msg){
+            return false;
+        }
         OnDetectorLogin(cmd, seq, detector, &request)
         break;
     }
@@ -83,17 +85,22 @@ func handleMsg(detector * Detector, cmd uint8, seq uint16, msg []byte)  {
     }
     case 3: {
         request := protocol.ReportRequest{};
-        request.Decode(msg)
+        if !request.Decode(msg){
+            return false;
+        }
         OnReport(cmd, seq, detector, &request)
         break;
     }
     case 4:{
         request := protocol.DetectorSelfInfoReportRequest{}
-        request.Decode(msg)
+        if !request.Decode(msg){
+            return false;
+        }
         OnDetectSelfReport(cmd, seq, detector, &request)
         break;
     }
     }
+    return true
 }
 
 func handleConn(conn net.Conn) {
@@ -131,16 +138,19 @@ func handleConn(conn net.Conn) {
                     log.Println("check crc failed")
                     return
                 }
-
+                handleRet := true;
                 if header.Cmd != 2 {
                     var seq uint16 = 0
                     reader := bytes.NewReader(buff[header.MsgLen - protocol.CRC16Len - protocol.SeqLen : header.MsgLen - protocol.CRC16Len])
                     binary.Read(reader, binary.BigEndian, &seq)
-                    handleMsg(&detector, header.Cmd, seq, buff[protocol.HeaderLen : header.MsgLen - protocol.CRC16Len - protocol.SeqLen])
+                    handleRet = handleMsg(&detector, header.Cmd, seq, buff[protocol.HeaderLen : header.MsgLen - protocol.CRC16Len - protocol.SeqLen])
                 } else {
-                    handleMsg(&detector, header.Cmd, 0, buff[protocol.HeaderLen : header.MsgLen - protocol.CRC16Len])
+                    handleRet = handleMsg(&detector, header.Cmd, 0, buff[protocol.HeaderLen : header.MsgLen - protocol.CRC16Len])
                 }
-
+                if !handleRet {
+                    log.Println("handleMsg failed, disconnect")
+                    return;
+                }
                 copy(buff, buff[header.MsgLen:buffUsed])
                 buffUsed -= header.MsgLen
                 header.Magic = 0
