@@ -27,18 +27,25 @@ func CreateDetector(mac string, imei string) {
     c.UpsertId(mac, bson.M{"_id":mac, "imei":imei, "last_update_time":uint32(time.Now().Unix())})
 }
 
-func UpdateDetector(mac string, longitude int, atitude int)  {
+func UpdateDetectorLastTime(mac string, time uint32)  {
     c := session.DB("detector").C("detector_info")
-    c.Update(bson.M{"_id":mac}, bson.M{"longitude":longitude, "atitude":atitude,"last_update_time":uint32(time.Now().Unix())})
+    c.Update(bson.M{"_id":mac}, bson.M{"last_update_time":time})
 }
 
-func SaveDetectorReport(apMac string, reportInfos list.List)  {
+func UpdateDetectorLocate(mac string, info * protocol.DetectorSelfInfoReportRequest)  {
+    c := session.DB("detector").C("detector_info")
+    c.Update(bson.M{"_id":mac}, bson.M{"longitude":info.Longitude, "atitude":info.Atitude, "mcc":info.Mcc, "mnc":info.Mnc,
+        "lac":info.Lac, "cell_id":info.CellId, "last_update_time":uint32(time.Now().Unix())})
+}
+
+func SaveDetectorReport(apMac string, reportInfos * list.List)  {
     c := session.DB("detector").C("detector_report")
     bulk := c.Bulk()
     for e := reportInfos.Front(); e != nil; e = e.Next(){
         info := e.Value.(*protocol.ReportInfo)
         fmt.Println(*info)
-        bulk.Insert(bson.M{"ap_mac":apMac, "device_mac":info.MAC, "longitude":info.Longitude, "atitude":info.Atitude, "time":info.Time})
+        bulk.Insert(bson.M{"ap_mac":apMac, "device_mac":info.MAC, "longitude":info.Longitude, "atitude":info.Atitude, "mcc":info.Mcc, "mnc":info.Mnc,
+            "lac":info.Lac, "cell_id":info.CellId, "time":info.Time})
     }
     bulk.Run()
 }

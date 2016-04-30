@@ -8,6 +8,7 @@ import (
     "db"
     "os"
     "log"
+    "fmt"
 )
 
 type Detector struct {
@@ -31,7 +32,7 @@ func (detector * Detector)SendMsg(cmd uint8, msg []byte)  {
     detector.conn.Write(buff.Bytes());
 }
 
-func OnDetectorLogin(detector * Detector, request protocol.LoginRequest) {
+func OnDetectorLogin(detector * Detector, request * protocol.LoginRequest) {
     log.Println("onDetectorLogin, request:", request)
     detector.MAC = request.MAC
     detector.Status = 1
@@ -48,9 +49,18 @@ func OnDetectorLogin(detector * Detector, request protocol.LoginRequest) {
     detector.SendMsg(1, buff)
 }
 
-func OnReport(detector *Detector, request protocol.ReportRequest)  {
+func OnReport(detector *Detector, request * protocol.ReportRequest)  {
+    if detector.Status != 1 {
+        log.Println("invalid detector report")
+        return
+    }
     log.Println("onReport, request:", request)
-    db.SaveDetectorReport(detector.MAC, request.ReportList)
+    db.SaveDetectorReport(detector.MAC, &request.ReportList)
+}
+
+func OnDetectSelfReport(detector *Detector, request * protocol.DetectorSelfInfoReportRequest)  {
+    log.Println("OnDetectSelfReport, request:", request)
+    db.UpdateDetectorLocate(detector.MAC, request)
 }
 
 func handleMsg(detector * Detector, cmd uint8, msg []byte)  {
@@ -59,18 +69,24 @@ func handleMsg(detector * Detector, cmd uint8, msg []byte)  {
     case 1: {
         request := protocol.LoginRequest{};
         request.Decode(msg)
-        OnDetectorLogin(detector, request)
+        OnDetectorLogin(detector, &request)
         break;
     }
     case 2: {
         detector.SendMsg(2, nil)
-        db.UpdateDetector(detector.MAC, 0, 0)
+        db.UpdateDetectorLastTime(detector.MAC, uint32(time.Now().Unix()))
         break;
     }
     case 3: {
         request := protocol.ReportRequest{};
         request.Decode(msg)
-        OnReport(detector, request)
+        OnReport(detector, &request)
+        break;
+    }
+    case 4:{
+        request := protocol.DetectorSelfInfoReportRequest{}
+        request.Decode(msg)
+        OnDetectSelfReport(detector, &request)
         break;
     }
     }
@@ -126,6 +142,7 @@ func handleConn(conn net.Conn) {
 }
 
 func main()  {
+    fmt.Println("server is starting...")
     logFile, logErr := os.OpenFile("./detector_server.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
     if logErr != nil {
         log.Println("Fail to find", "./log/detector_server.log", "cServer start Failed")
@@ -142,6 +159,7 @@ func main()  {
     }
     log.Println("server start, listen on", listen_address)
     defer listen.Close();
+    fmt.Println("server start done...")
     for {
         conn, err := listen.Accept();
         if err != nil {

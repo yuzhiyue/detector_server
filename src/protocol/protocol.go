@@ -89,12 +89,28 @@ type LoginResponse struct {
 }
 type ReportInfo struct {
     MAC string
+    RSSI uint8
     Longitude int32
     Atitude int32
+    Mcc uint16
+    Mnc uint8
+    Lac uint16
+    CellId uint16
     Time uint32
 }
 type ReportRequest struct {
     ReportList list.List
+    Seq uint16
+}
+
+type DetectorSelfInfoReportRequest struct {
+    Longitude int32
+    Atitude int32
+    Mcc uint16
+    Mnc uint8
+    Lac uint16
+    CellId uint16
+    Time uint32
     Seq uint16
 }
 
@@ -141,16 +157,33 @@ func (msg * LoginResponse)Encode() []byte {
 
 func (msg * ReportRequest)Decode(buff []byte) {
     reader := bytes.NewReader(buff)
-    for i := 0; i < len(buff) - 2; i += 18 {
+    for i := 0; i < len(buff) - 2; i += 26 {
         info := new(ReportInfo)
         var tmp [6]byte
         binary.Read(reader, binary.BigEndian, tmp[:6])
         info.MAC = byte2string(tmp[:6], true)
+        binary.Read(reader, binary.BigEndian, &info.RSSI)
         binary.Read(reader, binary.BigEndian, &info.Longitude)
         binary.Read(reader, binary.BigEndian, &info.Atitude)
+        binary.Read(reader, binary.BigEndian, &info.Mcc)
+        binary.Read(reader, binary.BigEndian, &info.Mnc)
+        binary.Read(reader, binary.BigEndian, &info.Lac)
+        binary.Read(reader, binary.BigEndian, &info.CellId)
         binary.Read(reader, binary.BigEndian, &info.Time)
         msg.ReportList.PushBack(info)
     }
+    binary.Read(reader, binary.BigEndian, &msg.Seq)
+}
+
+func (msg * DetectorSelfInfoReportRequest)Decode(buff []byte) {
+    reader := bytes.NewReader(buff)
+    binary.Read(reader, binary.BigEndian, &msg.Longitude)
+    binary.Read(reader, binary.BigEndian, &msg.Atitude)
+    binary.Read(reader, binary.BigEndian, &msg.Mcc)
+    binary.Read(reader, binary.BigEndian, &msg.Mnc)
+    binary.Read(reader, binary.BigEndian, &msg.Lac)
+    binary.Read(reader, binary.BigEndian, &msg.CellId)
+    binary.Read(reader, binary.BigEndian, &msg.Time)
     binary.Read(reader, binary.BigEndian, &msg.Seq)
 }
 
