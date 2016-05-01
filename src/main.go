@@ -12,13 +12,13 @@ import (
 )
 
 type Detector struct {
-    Id int
-    ProtoVer uint8
-    MAC string
+    Id        int
+    ProtoVer  uint8
+    MAC       string
     Longitude int32
-    Atitude int32
-    Status int
-    conn net.Conn
+    Latitude  int32
+    Status    int
+    conn      net.Conn
 }
 
 func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {

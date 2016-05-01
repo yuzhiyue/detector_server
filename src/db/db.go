@@ -5,7 +5,6 @@ import (
     "gopkg.in/mgo.v2/bson"
     "protocol"
     "container/list"
-    "fmt"
     "time"
     "log"
 )
@@ -34,8 +33,9 @@ func UpdateDetectorLastActiveTime(mac string, time uint32)  {
 
 func UpdateDetectorLocate(mac string, info * protocol.DetectorSelfInfoReportRequest)  {
     c := session.DB("detector").C("detector_info")
-    c.Update(bson.M{"_id":mac}, bson.M{"longitude":info.Longitude, "atitude":info.Atitude, "mcc":info.Mcc, "mnc":info.Mnc,
-        "lac":info.Lac, "cell_id":info.CellId, "last_update_time":uint32(time.Now().Unix())})
+    c.Update(bson.M{"_id":mac}, bson.M{"longitude":info.Longitude, "latitude":info.Latitude, "mcc":info.Mcc, "mnc":info.Mnc,
+        "lac":info.Lac, "cell_id":info.CellId, "last_active_time":uint32(time.Now().Unix()),
+        "geo": bson.M{"longitude": float64(info.Longitude) / protocol.GeoMmultiple, "latitude": float64(info.Latitude) / protocol.GeoMmultiple}})
 }
 
 func SaveDetectorReport(apMac string, reportInfos * list.List)  {
@@ -44,8 +44,9 @@ func SaveDetectorReport(apMac string, reportInfos * list.List)  {
     for e := reportInfos.Front(); e != nil; e = e.Next(){
         info := e.Value.(*protocol.ReportInfo)
         log.Println(*info)
-        bulk.Insert(bson.M{"ap_mac":apMac, "device_mac":info.MAC, "rssi":info.RSSI, "longitude":info.Longitude, "atitude":info.Atitude, "mcc":info.Mcc, "mnc":info.Mnc,
-            "lac":info.Lac, "cell_id":info.CellId, "time":info.Time})
+        bulk.Insert(bson.M{"ap_mac":apMac, "device_mac":info.MAC, "rssi":info.RSSI, "longitude":info.Longitude, "latitude":info.Latitude, "mcc":info.Mcc, "mnc":info.Mnc,
+            "lac":info.Lac, "cell_id":info.CellId, "time":info.Time,
+            "geo": bson.M{"longitude": float64(info.Longitude) / protocol.GeoMmultiple, "latitude": float64(info.Latitude) / protocol.GeoMmultiple}})
     }
     bulk.Run()
 }

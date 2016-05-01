@@ -8,6 +8,7 @@ import (
     "bufio"
     "log"
 )
+const GeoMmultiple = 1000000
 const MaxProtoVer = 1
 const HeaderLen uint16 = 2 + 2 + 1
 const CRC16Len uint16 = 2
@@ -88,15 +89,15 @@ type LoginResponse struct {
     Reversed [2]byte
 }
 type ReportInfo struct {
-    MAC string
-    RSSI uint8
+    MAC       string
+    RSSI      uint8
     Longitude int32
-    Atitude int32
-    Mcc uint16
-    Mnc uint8
-    Lac uint16
-    CellId uint16
-    Time uint32
+    Latitude  int32
+    Mcc       uint16
+    Mnc       uint8
+    Lac       uint16
+    CellId    uint16
+    Time      uint32
 }
 type ReportRequest struct {
     ReportList list.List
@@ -104,12 +105,12 @@ type ReportRequest struct {
 
 type DetectorSelfInfoReportRequest struct {
     Longitude int32
-    Atitude int32
-    Mcc uint16
-    Mnc uint8
-    Lac uint16
-    CellId uint16
-    Time uint32
+    Latitude  int32
+    Mcc       uint16
+    Mnc       uint8
+    Lac       uint16
+    CellId    uint16
+    Time      uint32
 }
 
 func CheckCRC16(buff []byte) bool {
@@ -161,7 +162,7 @@ func (msg * ReportRequest)Decode(buff []byte) bool {
         info.MAC = byte2string(tmp[:6], true)
         binary.Read(reader, binary.BigEndian, &info.RSSI)
         binary.Read(reader, binary.BigEndian, &info.Longitude)
-        binary.Read(reader, binary.BigEndian, &info.Atitude)
+        binary.Read(reader, binary.BigEndian, &info.Latitude)
         binary.Read(reader, binary.BigEndian, &info.Mcc)
         binary.Read(reader, binary.BigEndian, &info.Mnc)
         binary.Read(reader, binary.BigEndian, &info.Lac)
@@ -175,7 +176,7 @@ func (msg * ReportRequest)Decode(buff []byte) bool {
 func (msg * DetectorSelfInfoReportRequest)Decode(buff []byte) bool {
     reader := bytes.NewReader(buff)
     binary.Read(reader, binary.BigEndian, &msg.Longitude)
-    binary.Read(reader, binary.BigEndian, &msg.Atitude)
+    binary.Read(reader, binary.BigEndian, &msg.Latitude)
     binary.Read(reader, binary.BigEndian, &msg.Mcc)
     binary.Read(reader, binary.BigEndian, &msg.Mnc)
     binary.Read(reader, binary.BigEndian, &msg.Lac)
