@@ -33,9 +33,8 @@ func UpdateDetectorLastActiveTime(mac string, time uint32)  {
 
 func UpdateDetectorLocate(mac string, info * protocol.DetectorSelfInfoReportRequest)  {
     c := session.DB("detector").C("detector_info")
-    c.Update(bson.M{"_id":mac}, bson.M{"longitude":info.Longitude, "latitude":info.Latitude, "mcc":info.Mcc, "mnc":info.Mnc,
-        "lac":info.Lac, "cell_id":info.CellId, "last_active_time":uint32(time.Now().Unix()),
-        "geo": bson.M{"longitude": float64(info.Longitude) / protocol.GeoMmultiple, "latitude": float64(info.Latitude) / protocol.GeoMmultiple}})
+    c.Update(bson.M{"_id":mac}, bson.M{"longitude":float64(info.Longitude) / protocol.GeoMmultiple, "latitude":float64(info.Latitude) / protocol.GeoMmultiple, "mcc":info.Mcc, "mnc":info.Mnc,
+        "lac":info.Lac, "cell_id":info.CellId, "last_active_time":uint32(time.Now().Unix())})
 }
 
 func SaveDetectorReport(apMac string, reportInfos * list.List)  {
@@ -44,9 +43,8 @@ func SaveDetectorReport(apMac string, reportInfos * list.List)  {
     for e := reportInfos.Front(); e != nil; e = e.Next(){
         info := e.Value.(*protocol.ReportInfo)
         log.Println(*info)
-        bulk.Insert(bson.M{"ap_mac":apMac, "device_mac":info.MAC, "rssi":info.RSSI, "longitude":info.Longitude, "latitude":info.Latitude, "mcc":info.Mcc, "mnc":info.Mnc,
-            "lac":info.Lac, "cell_id":info.CellId, "time":info.Time,
-            "geo": bson.M{"longitude": float64(info.Longitude) / protocol.GeoMmultiple, "latitude": float64(info.Latitude) / protocol.GeoMmultiple}})
+        bulk.Insert(bson.M{"ap_mac":apMac, "device_mac":info.MAC, "rssi":info.RSSI, "longitude":float64(info.Longitude) / protocol.GeoMmultiple, "latitude":float64(info.Latitude) / protocol.GeoMmultiple, "mcc":info.Mcc, "mnc":info.Mnc,
+            "lac":info.Lac, "cell_id":info.CellId, "time":info.Time})
     }
     bulk.Run()
 }
