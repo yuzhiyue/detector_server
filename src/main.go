@@ -15,6 +15,7 @@ type Detector struct {
     Id        int
     ProtoVer  uint8
     MAC       string
+    IMEI      string
     Longitude int32
     Latitude  int32
     Status    int
@@ -38,11 +39,12 @@ func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
 func OnDetectorLogin(cmd uint8, seq uint16, detector * Detector, request * protocol.LoginRequest) {
     log.Println("onDetectorLogin, request:", request)
     detector.MAC = request.MAC
+    detector.IMEI = request.IMEI
     detector.Status = 1
     detector.ProtoVer = request.ProtoVer
 
-    db.CreateDetector(request.MAC, request.IMEI)
-
+    //db.CreateDetector(request.MAC, request.IMEI)
+    db.CreateDetector(request.IMEI, request.MAC)
     response := protocol.LoginResponse{}
     response.ProtoVer = protocol.MaxProtoVer
     response.Time = uint32(time.Now().Unix())
@@ -57,13 +59,15 @@ func OnReport(cmd uint8, seq uint16,detector *Detector, request * protocol.Repor
         return
     }
     log.Println("onReport, request:", request)
-    db.SaveDetectorReport(detector.MAC, &request.ReportList)
+    //db.SaveDetectorReport(detector.MAC, &request.ReportList)
+    db.SaveDetectorReport(detector.IMEI, &request.ReportList)
     detector.SendMsg(cmd, seq, nil)
 }
 
 func OnDetectSelfReport(cmd uint8, seq uint16, detector *Detector, request * protocol.DetectorSelfInfoReportRequest)  {
     log.Println("OnDetectSelfReport, request:", request)
-    db.UpdateDetectorLocate(detector.MAC, request)
+    //db.UpdateDetectorLocate(detector.MAC, request)
+    db.UpdateDetectorLocate(detector.IMEI, request)
     detector.SendMsg(cmd, seq, nil)
 }
 
@@ -80,7 +84,8 @@ func handleMsg(detector * Detector, cmd uint8, seq uint16, msg []byte) bool {
     }
     case 2: {
         detector.SendMsg(cmd, 0, nil)
-        db.UpdateDetectorLastActiveTime(detector.MAC, uint32(time.Now().Unix()))
+        //db.UpdateDetectorLastActiveTime(detector.MAC, uint32(time.Now().Unix()))
+        db.UpdateDetectorLastActiveTime(detector.IMEI, uint32(time.Now().Unix()))
         break;
     }
     case 3: {
