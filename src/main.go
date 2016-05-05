@@ -59,6 +59,13 @@ func OnReport(cmd uint8, seq uint16,detector *Detector, request * protocol.Repor
         return
     }
     log.Println("onReport, request:", request)
+    for e := request.ReportList.Front(); e != nil; e = e.Next() {
+        info := e.Value.(*protocol.ReportInfo)
+        info.Time = uint32(time.Now().Unix())
+        if (info.Latitude == 0 || info.Longitude == 0) {
+            info.Longitude, info.Latitude = detector.Longitude, detector.Latitude
+        }
+    }
     //db.SaveDetectorReport(detector.MAC, &request.ReportList)
     db.SaveDetectorReport(detector.IMEI, &request.ReportList)
     detector.SendMsg(cmd, seq, nil)
@@ -67,6 +74,11 @@ func OnReport(cmd uint8, seq uint16,detector *Detector, request * protocol.Repor
 func OnDetectSelfReport(cmd uint8, seq uint16, detector *Detector, request * protocol.DetectorSelfInfoReportRequest)  {
     log.Println("OnDetectSelfReport, request:", request)
     //db.UpdateDetectorLocate(detector.MAC, request)
+    if request.Latitude == 0 || request.Longitude == 0 {
+        lx, ly := db.GetGeoByBaseStation(int(request.Lac), int(request.CellId), int(request.Mcc))
+        request.Longitude, request.Latitude = int32(lx * protocol.GeoMmultiple), int32(ly * protocol.GeoMmultiple)
+    }
+    detector.Longitude, detector.Latitude = request.Longitude, request.Latitude
     db.UpdateDetectorLocate(detector.IMEI, request)
     detector.SendMsg(cmd, seq, nil)
 }
