@@ -76,6 +76,7 @@ func OnDetectSelfReport(cmd uint8, seq uint16, detector *Detector, request * pro
     //db.UpdateDetectorLocate(detector.MAC, request)
     if request.Latitude == 0 || request.Longitude == 0 {
         lx, ly := db.GetGeoByBaseStation(int(request.Lac), int(request.CellId), int(request.Mcc))
+        log.Println("GetGeoByBaseStation :", request.Lac, request.CellId, request.Mcc, lx, ly)
         request.Longitude, request.Latitude = int32(lx * protocol.GeoMmultiple), int32(ly * protocol.GeoMmultiple)
     }
     detector.Longitude, detector.Latitude = request.Longitude, request.Latitude
