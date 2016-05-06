@@ -9,6 +9,7 @@ import (
     "os"
     "log"
     "fmt"
+    "gopkg.in/mgo.v2/bson"
 )
 
 type Detector struct {
@@ -38,13 +39,20 @@ func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
 
 func OnDetectorLogin(cmd uint8, seq uint16, detector * Detector, request * protocol.LoginRequest) {
     log.Println("onDetectorLogin, request:", request)
+    result := bson.M{}
+    err := db.GetDetectorInfo(request.IMEI, &result)
+    if err != nil {
+        db.CreateDetector(request.IMEI, request.MAC)
+        //db.CreateDetector(request.MAC, request.IMEI)
+    } else {
+        detector.Longitude = int32(db.GetNumber(result, "longitude") * protocol.GeoMmultiple)
+        detector.Latitude = int32(db.GetNumber(result, "latitude") * protocol.GeoMmultiple)
+    }
     detector.MAC = request.MAC
     detector.IMEI = request.IMEI
     detector.Status = 1
     detector.ProtoVer = request.ProtoVer
 
-    //db.CreateDetector(request.MAC, request.IMEI)
-    db.CreateDetector(request.IMEI, request.MAC)
     response := protocol.LoginResponse{}
     response.ProtoVer = protocol.MaxProtoVer
     response.Time = uint32(time.Now().Unix())
@@ -79,9 +87,14 @@ func OnDetectSelfReport(cmd uint8, seq uint16, detector *Detector, request * pro
     if request.Latitude == 0 || request.Longitude == 0 {
         lx, ly := db.GetGeoByBaseStation(int(request.Lac), int(request.CellId), int(request.Mcc))
         log.Println("GetGeoByBaseStation :", request.Lac, request.CellId, request.Mcc, lx, ly)
-        request.Longitude, request.Latitude = int32(lx * protocol.GeoMmultiple), int32(ly * protocol.GeoMmultiple)
+        if lx == 0 || ly == 0 {
+            request.Longitude, request.Latitude = detector.Longitude, detector.Latitude
+        } else {
+            request.Longitude, request.Latitude = int32(lx * protocol.GeoMmultiple), int32(ly * protocol.GeoMmultiple)
+            detector.Longitude, detector.Latitude = request.Longitude, request.Latitude
+        }
     }
-    detector.Longitude, detector.Latitude = request.Longitude, request.Latitude
+
     db.UpdateDetectorLocate(detector.IMEI, request)
     detector.SendMsg(cmd, seq, nil)
 }

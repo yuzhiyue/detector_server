@@ -37,6 +37,11 @@ func InitDB()  {
     log.Println("connect to db succ")
 }
 
+func GetDetectorInfo(mac string, result interface{}) error {
+    c := session.DB("detector").C("detector_info")
+    return c.FindId(mac).One(result)
+}
+
 func CreateDetector(mac string, imei string) {
     c := session.DB("detector").C("detector_info")
     c.UpsertId(mac, bson.M{"_id":mac, "imei":imei, "last_active_time":uint32(time.Now().Unix())})
