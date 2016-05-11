@@ -161,8 +161,8 @@ func (msg * ReportRequest)Decode(buff []byte) bool {
         binary.Read(reader, binary.BigEndian, tmp[:6])
         info.MAC = byte2string(tmp[:6], true)
         binary.Read(reader, binary.BigEndian, &info.RSSI)
-        binary.Read(reader, binary.BigEndian, &info.Longitude)
         binary.Read(reader, binary.BigEndian, &info.Latitude)
+        binary.Read(reader, binary.BigEndian, &info.Longitude)
         binary.Read(reader, binary.BigEndian, &info.Mcc)
         binary.Read(reader, binary.BigEndian, &info.Mnc)
         binary.Read(reader, binary.BigEndian, &info.Lac)
@@ -175,8 +175,8 @@ func (msg * ReportRequest)Decode(buff []byte) bool {
 
 func (msg * DetectorSelfInfoReportRequest)Decode(buff []byte) bool {
     reader := bytes.NewReader(buff)
-    binary.Read(reader, binary.BigEndian, &msg.Longitude)
     binary.Read(reader, binary.BigEndian, &msg.Latitude)
+    binary.Read(reader, binary.BigEndian, &msg.Longitude)
     binary.Read(reader, binary.BigEndian, &msg.Mcc)
     binary.Read(reader, binary.BigEndian, &msg.Mnc)
     binary.Read(reader, binary.BigEndian, &msg.Lac)
