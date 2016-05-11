@@ -25,7 +25,11 @@ type Detector struct {
 func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
     buff := new(bytes.Buffer)
     binary.Write(buff, binary.BigEndian, uint16(0xf9f9))
-    binary.Write(buff, binary.BigEndian, uint16(len(msg)) + protocol.CRC16Len + protocol.HeaderLen + protocol.SeqLen - uint16(4))
+    msgLen := uint16(len(msg)) + protocol.CRC16Len + protocol.HeaderLen - uint16(4);
+    if cmd != 2 {
+        msgLen += protocol.SeqLen
+    }
+    binary.Write(buff, binary.BigEndian, msgLen)
     binary.Write(buff, binary.BigEndian, cmd)
     binary.Write(buff, binary.BigEndian, msg)
     if cmd != 2 {
