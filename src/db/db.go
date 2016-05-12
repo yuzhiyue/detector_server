@@ -44,7 +44,7 @@ func GetDetectorInfo(mac string, result interface{}) error {
 
 func CreateDetector(mac string, imei string) {
     c := session.DB("detector").C("detector_info")
-    c.UpsertId(mac, bson.M{"_id":mac, "imei":imei, "last_active_time":uint32(time.Now().Unix())})
+    c.UpsertId(mac, bson.M{"_id":mac, "imei":imei, "company":"01", "last_active_time":uint32(time.Now().Unix())})
 }
 
 func UpdateDetectorLastActiveTime(mac string, time uint32)  {
