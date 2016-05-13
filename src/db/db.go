@@ -49,13 +49,13 @@ func CreateDetector(mac string, imei string) {
 
 func UpdateDetectorLastActiveTime(mac string, time uint32)  {
     c := session.DB("detector").C("detector_info")
-    c.Update(bson.M{"_id":mac}, bson.M{"last_active_time":time})
+    c.Update(bson.M{"_id":mac}, bson.M{"$set": bson.M{"last_active_time":time}})
 }
 
 func UpdateDetectorLocate(mac string, info * protocol.DetectorSelfInfoReportRequest)  {
     c := session.DB("detector").C("detector_info")
-    c.Update(bson.M{"_id":mac}, bson.M{"longitude":float64(info.Longitude) / protocol.GeoMmultiple, "latitude":float64(info.Latitude) / protocol.GeoMmultiple, "mcc":info.Mcc, "mnc":info.Mnc,
-        "lac":info.Lac, "cell_id":info.CellId, "last_active_time":uint32(time.Now().Unix())})
+    c.Update(bson.M{"_id":mac},  bson.M{"$set": bson.M{"longitude":float64(info.Longitude) / protocol.GeoMmultiple, "latitude":float64(info.Latitude) / protocol.GeoMmultiple, "mcc":info.Mcc, "mnc":info.Mnc,
+        "lac":info.Lac, "cell_id":info.CellId, "last_active_time":uint32(time.Now().Unix())}})
 }
 
 func SaveDetectorReport(apMac string, reportInfos * list.List)  {
