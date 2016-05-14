@@ -49,6 +49,7 @@ func OnDetectorLogin(cmd uint8, seq uint16, detector * Detector, request * proto
         db.CreateDetector(request.IMEI, request.MAC)
         //db.CreateDetector(request.MAC, request.IMEI)
     } else {
+        db.UpdateLoginTime(request.IMEI)
         detector.Longitude = int32(db.GetNumber(result, "longitude") * protocol.GeoMmultiple)
         detector.Latitude = int32(db.GetNumber(result, "latitude") * protocol.GeoMmultiple)
     }
