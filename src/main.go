@@ -20,6 +20,7 @@ type Detector struct {
     Longitude int32
     Latitude  int32
     Status    int
+    LastRecvTime uint32
     conn      net.Conn
 }
 
@@ -105,7 +106,7 @@ func OnDetectSelfReport(cmd uint8, seq uint16, detector *Detector, request * pro
 }
 
 func handleMsg(detector * Detector, cmd uint8, seq uint16, msg []byte) bool {
-    log.Println("recv request, cmd:", cmd, msg)
+    log.Println("recv request", detector.MAC ,"cmd:", cmd, msg)
     switch cmd {
     case 1: {
         request := protocol.LoginRequest{};
@@ -116,12 +117,18 @@ func handleMsg(detector * Detector, cmd uint8, seq uint16, msg []byte) bool {
         break;
     }
     case 2: {
+        if detector.Status != 1 {
+            log.Println("recv cmd 2 without login")
+        }
         detector.SendMsg(cmd, 0, nil)
         //db.UpdateDetectorLastActiveTime(detector.MAC, uint32(time.Now().Unix()))
         db.UpdateDetectorLastActiveTime(detector.IMEI, uint32(time.Now().Unix()))
         break;
     }
     case 3: {
+        if detector.Status != 1 {
+            log.Println("recv cmd 3 without login")
+        }
         request := protocol.ReportRequest{};
         if !request.Decode(msg){
             return false;
@@ -130,6 +137,9 @@ func handleMsg(detector * Detector, cmd uint8, seq uint16, msg []byte) bool {
         break;
     }
     case 4:{
+        if detector.Status != 1 {
+            log.Println("recv cmd 4 without login")
+        }
         request := protocol.DetectorSelfInfoReportRequest{}
         if !request.Decode(msg){
             return false;
@@ -149,11 +159,13 @@ func handleConn(conn net.Conn) {
     var buffUsed uint16 = 0;
     header := protocol.MsgHeader{}
     for {
+        conn.SetReadDeadline(time.Now().Add(120 * time.Second))
         len, err := conn.Read(buff[buffUsed:])
         if err != nil {
             log.Println("recv data err", err)
             return;
         }
+        detector.LastRecvTime = uint32(time.Now().Unix())
         log.Println("recv data, len:", len)
         buffUsed += uint16(len)
         for {
