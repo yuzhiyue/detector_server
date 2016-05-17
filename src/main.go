@@ -106,7 +106,7 @@ func OnDetectSelfReport(cmd uint8, seq uint16, detector *Detector, request * pro
 }
 
 func handleMsg(detector * Detector, cmd uint8, seq uint16, msg []byte) bool {
-    log.Println("recv request", detector.MAC ,"cmd:", cmd, msg)
+    log.Println("recv request", detector.IMEI ,"cmd:", cmd, msg)
     switch cmd {
     case 1: {
         request := protocol.LoginRequest{};
