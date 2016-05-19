@@ -20,6 +20,7 @@ type Detector struct {
     Longitude int32
     Latitude  int32
     Status    int
+    GeoUpdateType int
     LastRecvTime uint32
     conn      net.Conn
 }
@@ -53,6 +54,7 @@ func OnDetectorLogin(cmd uint8, seq uint16, detector * Detector, request * proto
         db.UpdateLoginTime(request.IMEI)
         detector.Longitude = int32(db.GetNumber(result, "longitude") * protocol.GeoMmultiple)
         detector.Latitude = int32(db.GetNumber(result, "latitude") * protocol.GeoMmultiple)
+        detector.GeoUpdateType = int32(db.GetNumber(result, "geo_update_type"))
     }
     detector.MAC = request.MAC
     detector.IMEI = request.IMEI
@@ -89,19 +91,24 @@ func OnReport(cmd uint8, seq uint16,detector *Detector, request * protocol.Repor
 
 func OnDetectSelfReport(cmd uint8, seq uint16, detector *Detector, request * protocol.DetectorSelfInfoReportRequest)  {
     log.Println("OnDetectSelfReport, request:", request)
-    //db.UpdateDetectorLocate(detector.MAC, request)
-    if request.Latitude == 0 || request.Longitude == 0 {
-        lx, ly := db.GetGeoByBaseStation(int(request.Lac), int(request.CellId), int(request.Mcc))
-        log.Println("GetGeoByBaseStation :", request.Lac, request.CellId, request.Mcc, lx, ly)
-        if lx == 0 || ly == 0 {
-            request.Longitude, request.Latitude = detector.Longitude, detector.Latitude
-        } else {
-            request.Longitude, request.Latitude = int32(lx * protocol.GeoMmultiple), int32(ly * protocol.GeoMmultiple)
-            detector.Longitude, detector.Latitude = request.Longitude, request.Latitude
+    if detector.GeoUpdateType == 1 {
+        db.UpdateDetectorLastActiveTime(detector.IMEI, uint32(time.Now().Unix()))
+    } else {
+        //db.UpdateDetectorLocate(detector.MAC, request)
+        if request.Latitude == 0 || request.Longitude == 0 {
+            lx, ly := db.GetGeoByBaseStation(int(request.Lac), int(request.CellId), int(request.Mcc))
+            log.Println("GetGeoByBaseStation :", request.Lac, request.CellId, request.Mcc, lx, ly)
+            if lx == 0 || ly == 0 {
+                request.Longitude, request.Latitude = detector.Longitude, detector.Latitude
+            } else {
+                request.Longitude, request.Latitude = int32(lx * protocol.GeoMmultiple), int32(ly * protocol.GeoMmultiple)
+                detector.Longitude, detector.Latitude = request.Longitude, request.Latitude
+            }
         }
+
+        db.UpdateDetectorLocate(detector.IMEI, request)
     }
 
-    db.UpdateDetectorLocate(detector.IMEI, request)
     detector.SendMsg(cmd, seq, nil)
 }
 
