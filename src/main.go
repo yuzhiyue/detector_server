@@ -19,8 +19,8 @@ type Detector struct {
     IMEI      string
     Longitude int32
     Latitude  int32
-    Status    int
     GeoUpdateType int
+    Status    int
     LastRecvTime uint32
     conn      net.Conn
 }
@@ -142,6 +142,14 @@ func handleMsg(detector * Detector, cmd uint8, seq uint16, msg []byte) bool {
         OnReport(cmd, seq, detector, &request)
         break;
     }
+    case 0x0c: {
+        request := protocol.ReportRequest{};
+        if !request.Decode(msg){
+            return false;
+        }
+        OnReport(cmd, seq, detector, &request)
+        break;
+    }
     case 4:{
         if detector.Status != 1 {
             log.Println("recv cmd 4 without login")
@@ -221,6 +229,12 @@ func handleConn(conn net.Conn) {
 }
 
 func main()  {
+    dbName := "detector"
+    listen_address := ":10001"
+    if len(os.Args) == 2 && os.Args[1] == "test_svr" {
+        dbName = "test_detector"
+        listen_address = ":11001"
+    }
     fmt.Println("server is starting...")
     logFile, logErr := os.OpenFile("./detector_server.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
     if logErr != nil {
@@ -231,8 +245,7 @@ func main()  {
     log.SetOutput(logFile)
     log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
-    db.InitDB()
-    listen_address := ":10001"
+    db.InitDB(dbName)
     listen, err := net.Listen("tcp", listen_address)
     if err != nil {
         return

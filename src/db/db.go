@@ -10,7 +10,7 @@ import (
 )
 
 var session *mgo.Session;
-
+var dbName string;
 func GetNumber(m bson.M, key string) float64 {
     v := m[key]
     if v == nil {
@@ -27,13 +27,14 @@ func GetNumber(m bson.M, key string) float64 {
     return 0
 }
 
-func InitDB()  {
+func InitDB(db string)  {
     var err error
     session, err = mgo.Dial("127.0.0.1:22522")
     if err != nil {
         panic(err)
     }
     session.SetMode(mgo.Monotonic, true)
+    dbName = db
     log.Println("connect to db succ")
 }
 
@@ -43,7 +44,7 @@ func GetDetectorInfo(mac string, result interface{}) error {
 }
 
 func CreateDetector(mac string, imei string) {
-    c := session.DB("detector").C("detector_info")
+    c := session.DB(dbName).C("detector_info")
     c.Insert(bson.M{"_id":mac, "imei":imei, "company":"01", "last_active_time":uint32(time.Now().Unix())})
 }
 

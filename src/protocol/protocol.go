@@ -173,6 +173,20 @@ func (msg * ReportRequest)Decode(buff []byte) bool {
     return reader.Len() == 0
 }
 
+func (msg * ReportRequest)DecodeFixAPReport(buff []byte) bool {
+    reader := bytes.NewReader(buff)
+    for i := 0; i < len(buff) - 2; i += 11 {
+        info := new(ReportInfo)
+        var tmp [6]byte
+        binary.Read(reader, binary.BigEndian, tmp[:6])
+        info.MAC = byte2string(tmp[:6], true)
+        binary.Read(reader, binary.BigEndian, &info.RSSI)
+        binary.Read(reader, binary.BigEndian, &info.Time)
+        msg.ReportList.PushBack(info)
+    }
+    return reader.Len() == 0
+}
+
 func (msg * DetectorSelfInfoReportRequest)Decode(buff []byte) bool {
     reader := bytes.NewReader(buff)
     binary.Read(reader, binary.BigEndian, &msg.Latitude)
