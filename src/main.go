@@ -231,14 +231,16 @@ func handleConn(conn net.Conn) {
 func main()  {
     dbName := "detector"
     listen_address := ":10001"
+    logPath := "./detector_server.log"
     if len(os.Args) == 2 && os.Args[1] == "test_svr" {
         dbName = "test_detector"
         listen_address = ":11001"
+        logPath = "./test_detector_server.log"
     }
     fmt.Println("server is starting...")
-    logFile, logErr := os.OpenFile("./detector_server.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
+    logFile, logErr := os.OpenFile(logPath, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
     if logErr != nil {
-        log.Println("Fail to find", "./log/detector_server.log", "cServer start Failed")
+        log.Println("Fail to find", logPath, "cServer start Failed")
         os.Exit(1)
     }
     //logFile.Close()
