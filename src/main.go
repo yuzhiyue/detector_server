@@ -249,7 +249,7 @@ func main()  {
     log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
     db.InitDB(dbName)
-    listen, err := net.Listen("tcp", listen_address)
+    listen, err := net.Listen("tcp4", listen_address)
     if err != nil {
         return
     }
