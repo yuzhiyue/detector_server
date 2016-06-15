@@ -9,7 +9,7 @@ import (
     "log"
 )
 
-var session *mgo.Session;
+var g_session *mgo.Session;
 var dbName string;
 func GetNumber(m bson.M, key string) float64 {
     v := m[key]
@@ -27,44 +27,60 @@ func GetNumber(m bson.M, key string) float64 {
     return 0
 }
 
+func GetSession() *mgo.Session {
+    return g_session.Clone()
+}
+
 func InitDB(db string)  {
     var err error
-    session, err = mgo.Dial("127.0.0.1:22522")
+    g_session, err = mgo.Dial("127.0.0.1:22522")
     if err != nil {
         panic(err)
     }
-    session.SetMode(mgo.Monotonic, true)
+    g_session.SetMode(mgo.Monotonic, true)
     dbName = db
     log.Println("connect to db succ")
 }
 
 func GetDetectorInfo(mac string, result interface{}) error {
+    session := GetSession()
+    defer session.Close()
     c := session.DB("detector").C("detector_info")
     return c.FindId(mac).One(result)
 }
 
 func CreateDetector(mac string, imei string) {
+    session := GetSession()
+    defer session.Close()
     c := session.DB(dbName).C("detector_info")
     c.Insert(bson.M{"_id":mac, "imei":imei, "company":"01", "last_active_time":uint32(time.Now().Unix())})
 }
 
 func UpdateLoginTime(mac string)  {
+    session := GetSession()
+    defer session.Close()
     c := session.DB("detector").C("detector_info")
     c.UpsertId(mac, bson.M{"$set": bson.M{"last_login_time":uint32(time.Now().Unix())}})
 }
 
 func UpdateDetectorLastActiveTime(mac string, time uint32)  {
+    session := GetSession()
+    defer session.Close()
     c := session.DB("detector").C("detector_info")
     c.Update(bson.M{"_id":mac}, bson.M{"$set": bson.M{"last_active_time":time}})
 }
 
 func UpdateDetectorLocate(mac string, info * protocol.DetectorSelfInfoReportRequest)  {
+    session := GetSession()
+    defer session.Close()
     c := session.DB("detector").C("detector_info")
     c.Update(bson.M{"_id":mac},  bson.M{"$set": bson.M{"longitude":float64(info.Longitude) / protocol.GeoMmultiple, "latitude":float64(info.Latitude) / protocol.GeoMmultiple, "mcc":info.Mcc, "mnc":info.Mnc,
         "lac":info.Lac, "cell_id":info.CellId, "last_active_time":uint32(time.Now().Unix())}})
 }
 
 func SaveDetectorReport(apMac string, reportInfos * list.List)  {
+    session := GetSession()
+    defer session.Close()
     c := session.DB("detector").C("detector_report")
     bulk := c.Bulk()
     for e := reportInfos.Front(); e != nil; e = e.Next(){
@@ -80,6 +96,8 @@ func SaveDetectorReport(apMac string, reportInfos * list.List)  {
 }
 
 func GetGeoByBaseStation(lac int, cell int, mcc int) (float64, float64)  {
+    session := GetSession()
+    defer session.Close()
     if lac != 0 && cell != 0 {
         result := bson.M{}
         c := session.DB("detector").C("base_station_info")
