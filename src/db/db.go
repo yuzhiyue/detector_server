@@ -7,7 +7,35 @@ import (
     "container/list"
     "time"
     "log"
+    "gopkg.in/olivere/elastic.v3"
 )
+var es_client *elastic.Client
+func InitES() {
+    var err error
+    es_client, err = elastic.NewClient(elastic.SetURL("http://120.24.7.62:9200"))
+    if err != nil {
+        // Handle error
+        panic(err)
+    }
+}
+
+func InitIndex()  {
+    exists, err := es_client.IndexExists("detector").Do()
+    if err != nil {
+        // Handle error
+        panic(err)
+    }
+    if !exists {
+        createIndex, err := es_client.CreateIndex("detecotr").Do()
+        if err != nil {
+            // Handle error
+            panic(err)
+        }
+        if !createIndex.Acknowledged {
+            // Not acknowledged
+        }
+    }
+}
 
 var session *mgo.Session;
 var dbName string;
