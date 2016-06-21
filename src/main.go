@@ -92,22 +92,23 @@ func OnReport(cmd uint8, seq uint16,detector *Detector, request * protocol.Repor
 func OnDetectSelfReport(cmd uint8, seq uint16, detector *Detector, request * protocol.DetectorSelfInfoReportRequest)  {
     log.Println("OnDetectSelfReport, request:", request)
 
-    if request.Latitude == 0 || request.Longitude == 0 {
-        lx, ly := db.GetGeoByBaseStation(int(request.Lac), int(request.CellId), int(request.Mcc))
-        log.Println("GetGeoByBaseStation :", request.Lac, request.CellId, request.Mcc, lx, ly)
-        if lx == 0 || ly == 0 {
-            request.Longitude, request.Latitude = detector.Longitude, detector.Latitude
-        } else {
-            request.Longitude, request.Latitude = int32(lx * protocol.GeoMmultiple), int32(ly * protocol.GeoMmultiple)
-            detector.Longitude, detector.Latitude = request.Longitude, request.Latitude
-        }
-        if (request.Longitude == 0 || request.Latitude == 0){
-            db.UpdateDetectorLastActiveTime(detector.IMEI, uint32(time.Now().Unix()))
-        } else {
-            db.UpdateDetectorLocate(detector.IMEI, request)
-        }
-    }
-
+    //if request.Latitude == 0 || request.Longitude == 0 {
+    //    lx, ly := db.GetGeoByBaseStation(int(request.Lac), int(request.CellId), int(request.Mcc))
+    //    log.Println("GetGeoByBaseStation :", request.Lac, request.CellId, request.Mcc, lx, ly)
+    //    if lx == 0 || ly == 0 {
+    //        request.Longitude, request.Latitude = detector.Longitude, detector.Latitude
+    //    } else {
+    //        request.Longitude, request.Latitude = int32(lx * protocol.GeoMmultiple), int32(ly * protocol.GeoMmultiple)
+    //        detector.Longitude, detector.Latitude = request.Longitude, request.Latitude
+    //    }
+    //
+    //    if (request.Longitude == 0 || request.Latitude == 0){
+    //        db.UpdateDetectorLastActiveTime(detector.IMEI, uint32(time.Now().Unix()))
+    //    } else {
+    //        db.UpdateDetectorLocate(detector.IMEI, request)
+    //    }
+    //}
+    db.UpdateDetectorLastActiveTime(detector.IMEI, uint32(time.Now().Unix()))
     detector.SendMsg(cmd, seq, nil)
 }
 
@@ -248,7 +249,7 @@ func main()  {
     log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
     db.InitDB(dbName)
-    listen, err := net.Listen("tcp", listen_address)
+    listen, err := net.Listen("tcp4", listen_address)
     if err != nil {
         return
     }
