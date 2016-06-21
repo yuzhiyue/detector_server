@@ -3,11 +3,11 @@ package db
 import (
     "gopkg.in/mgo.v2"
     "gopkg.in/mgo.v2/bson"
-    "protocol"
     "container/list"
     "time"
     "log"
     "gopkg.in/olivere/elastic.v3"
+    "detector_server/protocol"
 )
 var es_client *elastic.Client
 func InitES() {

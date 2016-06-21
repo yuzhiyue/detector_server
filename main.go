@@ -1,15 +1,15 @@
 package main
 import (
     "net"
-    "protocol"
     "time"
     "bytes"
     "encoding/binary"
-    "db"
     "os"
     "log"
     "fmt"
     "gopkg.in/mgo.v2/bson"
+    "detector_server/db"
+    "detector_server/protocol"
 )
 
 type Detector struct {
