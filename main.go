@@ -10,6 +10,7 @@ import (
     "gopkg.in/mgo.v2/bson"
     "detector_server/db"
     "detector_server/protocol"
+    "encoding/hex"
 )
 
 type Detector struct {
@@ -166,6 +167,7 @@ func handleMsg(detector * Detector, cmd uint8, seq uint16, msg []byte) bool {
     return true
 }
 
+
 func handleConn(conn net.Conn) {
     defer conn.Close()
     detector := Detector {}
@@ -182,6 +184,7 @@ func handleConn(conn net.Conn) {
         }
         detector.LastRecvTime = uint32(time.Now().Unix())
         log.Println("recv data, len:", len)
+        log.Println("dump data, ", hex.Dump(buff[buffUsed: buffUsed+len]))
         buffUsed += uint16(len)
         for {
             if header.MsgLen == 0 {
