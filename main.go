@@ -81,7 +81,10 @@ func OnReport(cmd uint8, seq uint16,detector *Detector, request * protocol.Repor
         if info.Time == 0 {
             info.Time = uint32(time.Now().Unix())
         }
-        if (info.Latitude == 0 || info.Longitude == 0) {
+        //if (info.Latitude == 0 || info.Longitude == 0) {
+        //    info.Longitude, info.Latitude = detector.Longitude, detector.Latitude
+        //}
+        if (detector.Latitude != 0 && detector.Longitude != 0) {
             info.Longitude, info.Latitude = detector.Longitude, detector.Latitude
         }
     }
