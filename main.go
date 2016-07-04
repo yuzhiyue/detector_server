@@ -7,81 +7,16 @@ import (
     "os"
     "log"
     "fmt"
-    "gopkg.in/mgo.v2/bson"
     "detector_server/db"
     "detector_server/protocol"
     "encoding/hex"
+    "detector_server/msg_hanler"
 )
 
 
-func (detector * protocol.Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
-    buff := new(bytes.Buffer)
-    binary.Write(buff, binary.BigEndian, uint16(0xf9f9))
-    msgLen := uint16(len(msg)) + protocol.CRC16Len + protocol.HeaderLen - uint16(4);
-    if cmd != 2 {
-        msgLen += protocol.SeqLen
-    }
-    binary.Write(buff, binary.BigEndian, msgLen)
-    binary.Write(buff, binary.BigEndian, cmd)
-    binary.Write(buff, binary.BigEndian, msg)
-    if cmd != 2 {
-        binary.Write(buff, binary.BigEndian, seq)
-    }
-    crc16 := protocol.GenCRC16(buff.Bytes())
-    binary.Write(buff, binary.BigEndian, crc16)
-    detector.conn.Write(buff.Bytes());
-}
 
-func OnDetectorLogin(cmd uint8, seq uint16, detector * Detector, request * protocol.LoginRequest) {
-    log.Println("onDetectorLogin, request:", request)
-    result := bson.M{}
-    err := db.GetDetectorInfo(request.IMEI, &result)
-    if err != nil {
-        db.CreateDetector(request.IMEI, request.MAC)
-        //db.CreateDetector(request.MAC, request.IMEI)
-    } else {
-        db.UpdateLoginTime(request.IMEI)
-        detector.Longitude = int32(db.GetNumber(result, "longitude") * protocol.GeoMmultiple)
-        detector.Latitude = int32(db.GetNumber(result, "latitude") * protocol.GeoMmultiple)
-        detector.GeoUpdateType = int(db.GetNumber(result, "geo_update_type"))
-    }
-    detector.MAC = request.MAC
-    detector.IMEI = request.IMEI
-    detector.Status = 1
-    detector.ProtoVer = request.ProtoVer
 
-    response := protocol.LoginResponse{}
-    response.ProtoVer = protocol.MaxProtoVer
-    response.Time = uint32(time.Now().Unix())
-    buff := response.Encode()
-    log.Println("response:", buff)
-    detector.SendMsg(cmd, seq, buff)
-}
-
-func OnReport(cmd uint8, seq uint16,detector *Detector, request * protocol.ReportRequest)  {
-    if detector.Status != 1 {
-        log.Println("invalid detector report")
-        return
-    }
-    log.Println("onReport, request:", request)
-    for e := request.ReportList.Front(); e != nil; e = e.Next() {
-        info := e.Value.(*protocol.ReportInfo)
-        if info.Time == 0 {
-            info.Time = uint32(time.Now().Unix())
-        }
-        //if (info.Latitude == 0 || info.Longitude == 0) {
-        //    info.Longitude, info.Latitude = detector.Longitude, detector.Latitude
-        //}
-        if (detector.Latitude != 0 && detector.Longitude != 0) {
-            info.Longitude, info.Latitude = detector.Longitude, detector.Latitude
-        }
-    }
-    //db.SaveDetectorReport(detector.MAC, &request.ReportList)
-    db.SaveDetectorReport(detector.IMEI, &request.ReportList)
-    detector.SendMsg(cmd, seq, nil)
-}
-
-func OnDetectSelfReport(cmd uint8, seq uint16, detector *Detector, request * protocol.DetectorSelfInfoReportRequest)  {
+func OnDetectSelfReport(cmd uint8, seq uint16, detector *msg_hanler.Detector, request * protocol.DetectorSelfInfoReportRequest)  {
     log.Println("OnDetectSelfReport, request:", request)
 
     //if request.Latitude == 0 || request.Longitude == 0 {
@@ -104,18 +39,18 @@ func OnDetectSelfReport(cmd uint8, seq uint16, detector *Detector, request * pro
     detector.SendMsg(cmd, seq, nil)
 }
 
-func handleMsg(detector * Detector, cmd uint8, seq uint16, msg []byte) bool {
+func handleMsg(detector * msg_hanler.Detector, cmd uint8, seq uint16, msg []byte) bool {
     log.Println("recv request", detector.IMEI ,"cmd:", cmd, msg)
     switch cmd {
-    case 1: {
-        request := protocol.LoginRequest{};
-        if !request.Decode(msg){
-            return false;
-        }
-        OnDetectorLogin(cmd, seq, detector, &request)
+    case 0x01: {
+        msg_hanler.HandleLoginMsgV1(detector, cmd, seq, msg)
         break;
     }
-    case 2: {
+    case 0x11: {
+        msg_hanler.HandleLoginMsgV2(detector, cmd, seq, msg)
+        break;
+    }
+    case 0x02: {
         if detector.Status != 1 {
             log.Println("recv cmd 2 without login")
         }
@@ -124,26 +59,11 @@ func handleMsg(detector * Detector, cmd uint8, seq uint16, msg []byte) bool {
         db.UpdateDetectorLastActiveTime(detector.IMEI, uint32(time.Now().Unix()))
         break;
     }
-    case 3: {
-        if detector.Status != 1 {
-            log.Println("recv cmd 3 without login")
-        }
-        request := protocol.ReportRequest{};
-        if !request.Decode(msg){
-            return false;
-        }
-        OnReport(cmd, seq, detector, &request)
+    case 0x03: {
+        msg_hanler.HandleReportTraceMsg(detector, cmd, seq, msg)
         break;
     }
-    case 0x0c: {
-        request := protocol.ReportRequest{};
-        if !request.Decode(msg){
-            return false;
-        }
-        OnReport(cmd, seq, detector, &request)
-        break;
-    }
-    case 4:{
+    case 0x04:{
         if detector.Status != 1 {
             log.Println("recv cmd 4 without login")
         }
@@ -154,6 +74,15 @@ func handleMsg(detector * Detector, cmd uint8, seq uint16, msg []byte) bool {
         OnDetectSelfReport(cmd, seq, detector, &request)
         break;
     }
+    case 0x0c: {
+        request := protocol.ReportRequest{};
+        if !request.Decode(msg){
+            return false;
+        }
+        OnReport(cmd, seq, detector, &request)
+        break;
+    }
+
     }
     return true
 }
@@ -161,8 +90,8 @@ func handleMsg(detector * Detector, cmd uint8, seq uint16, msg []byte) bool {
 
 func handleConn(conn net.Conn) {
     defer conn.Close()
-    detector := Detector {}
-    detector.conn = conn
+    detector := msg_hanler.Detector {}
+    detector.Conn = conn
     buff := make([]byte, 1024 * 32)
     var buffUsed uint16 = 0;
     header := protocol.MsgHeader{}

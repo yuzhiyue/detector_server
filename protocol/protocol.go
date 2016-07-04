@@ -184,6 +184,25 @@ func (msg * ReportRequest)Decode(buff []byte) bool {
     return reader.Len() == 0
 }
 
+func (msg * ReportRequest)DecodeV2(buff []byte) bool {
+    reader := bytes.NewReader(buff)
+    var tmp [6]byte
+    binary.Read(reader, binary.BigEndian, tmp[:6]) // 跳过探针MAC
+    for i := 0; i < len(buff) - 2 - 6; i += 26 {
+        info := new(ReportInfo)
+        binary.Read(reader, binary.BigEndian, tmp[:6])
+        info.MAC = byte2string(tmp[:6], true)
+        binary.Read(reader, binary.BigEndian, tmp[:6]) // 跳过来源MAC
+        binary.Read(reader, binary.BigEndian, &info.RSSI)
+        binary.Read(reader, binary.BigEndian, tmp[:1]) // 跳过信道
+        info.Latitude = 0
+        info.Longitude = 0
+        binary.Read(reader, binary.BigEndian, &info.Time)
+        msg.ReportList.PushBack(info)
+    }
+    return reader.Len() == 0
+}
+
 func (msg * ReportRequest)DecodeFixAPReport(buff []byte) bool {
     reader := bytes.NewReader(buff)
     for i := 0; i < len(buff) - 2; i += 11 {
