@@ -13,20 +13,8 @@ import (
     "encoding/hex"
 )
 
-type Detector struct {
-    Id        int
-    ProtoVer  uint8
-    MAC       string
-    IMEI      string
-    Longitude int32
-    Latitude  int32
-    GeoUpdateType int
-    Status    int
-    LastRecvTime uint32
-    conn      net.Conn
-}
 
-func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
+func (detector * protocol.Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
     buff := new(bytes.Buffer)
     binary.Write(buff, binary.BigEndian, uint16(0xf9f9))
     msgLen := uint16(len(msg)) + protocol.CRC16Len + protocol.HeaderLen - uint16(4);
@@ -187,7 +175,7 @@ func handleConn(conn net.Conn) {
         }
         detector.LastRecvTime = uint32(time.Now().Unix())
         log.Println("recv data, len:", len)
-        log.Println("dump data, ", hex.Dump(buff[buffUsed: buffUsed+uint16(len)]))
+        log.Println("dump data:\n ", hex.Dump(buff[buffUsed: buffUsed+uint16(len)]))
         buffUsed += uint16(len)
         for {
             if header.MsgLen == 0 {
@@ -236,6 +224,8 @@ func handleConn(conn net.Conn) {
 }
 
 func main()  {
+    bs := []byte{0,2}
+    fmt.Printf("crc16:%02x\n", protocol.Crc16(bs))
     dbName := "detector"
     listen_address := ":10001"
     logPath := "./detector_server.log"

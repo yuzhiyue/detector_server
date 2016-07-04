@@ -145,6 +145,17 @@ func (msg * LoginRequest)Decode(buff []byte) bool {
     return reader.Len() == 0
 }
 
+func (msg * LoginRequest)DecodeV2(buff []byte) bool {
+    reader := bytes.NewReader(buff)
+    var tmp [64]byte
+    binary.Read(reader, binary.BigEndian, tmp[:6])
+    msg.MAC = byte2string(tmp[:6], true)
+    binary.Read(reader, binary.BigEndian, tmp[:64])
+    binary.Read(reader, binary.BigEndian, tmp[:64])
+    binary.Read(reader, binary.BigEndian, &msg.ProtoVer)
+    return reader.Len() == 0
+}
+
 func (msg * LoginResponse)Encode() []byte {
     buf := new(bytes.Buffer)
     binary.Write(buf, binary.BigEndian, msg.Time)
