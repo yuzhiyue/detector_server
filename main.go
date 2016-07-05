@@ -89,8 +89,8 @@ func handleMsg(detector * msg_hanler.Detector, cmd uint8, seq uint16, msg []byte
 
 func handleConn(conn net.Conn) {
     defer conn.Close()
-    detector := Detector {}
-    detector.conn = conn
+    detector := msg_hanler.Detector {}
+    detector.Conn = conn
     buff := make([]byte, 1024 * 32)
     var buffUsed uint16 = 0;
     header := protocol.MsgHeader{}
