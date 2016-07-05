@@ -11,6 +11,7 @@ import (
     "detector_server/protocol"
     "encoding/hex"
     "detector_server/msg_hanler"
+    "gopkg.in/mgo.v2/bson"
 )
 
 
@@ -18,7 +19,13 @@ import (
 
 func OnDetectSelfReport(cmd uint8, seq uint16, detector *msg_hanler.Detector, request * protocol.DetectorSelfInfoReportRequest)  {
     log.Println("OnDetectSelfReport, request:", request)
-
+    result := bson.M{}
+    err := db.GetDetectorInfo(detector.IMEI, &result)
+    if err == nil {
+        detector.Longitude = int32(db.GetNumber(result, "longitude") * protocol.GeoMmultiple)
+        detector.Latitude = int32(db.GetNumber(result, "latitude") * protocol.GeoMmultiple)
+        detector.GeoUpdateType = int(db.GetNumber(result, "geo_update_type"))
+    }
     //if request.Latitude == 0 || request.Longitude == 0 {
     //    lx, ly := db.GetGeoByBaseStation(int(request.Lac), int(request.CellId), int(request.Mcc))
     //    log.Println("GetGeoByBaseStation :", request.Lac, request.CellId, request.Mcc, lx, ly)
@@ -35,6 +42,7 @@ func OnDetectSelfReport(cmd uint8, seq uint16, detector *msg_hanler.Detector, re
     //        db.UpdateDetectorLocate(detector.IMEI, request)
     //    }
     //}
+    db.UpdateDetectorLocate(detector.IMEI, request)
     db.UpdateDetectorLastActiveTime(detector.IMEI, uint32(time.Now().Unix()))
     detector.SendMsg(cmd, seq, nil)
 }
@@ -81,8 +89,8 @@ func handleMsg(detector * msg_hanler.Detector, cmd uint8, seq uint16, msg []byte
 
 func handleConn(conn net.Conn) {
     defer conn.Close()
-    detector := msg_hanler.Detector {}
-    detector.Conn = conn
+    detector := Detector {}
+    detector.conn = conn
     buff := make([]byte, 1024 * 32)
     var buffUsed uint16 = 0;
     header := protocol.MsgHeader{}
@@ -95,7 +103,7 @@ func handleConn(conn net.Conn) {
         }
         detector.LastRecvTime = uint32(time.Now().Unix())
         log.Println("recv data, len:", len)
-        log.Println("dump data:\n ", hex.Dump(buff[buffUsed: buffUsed+uint16(len)]))
+        log.Println("dump data, ", hex.Dump(buff[buffUsed: buffUsed+uint16(len)]))
         buffUsed += uint16(len)
         for {
             if header.MsgLen == 0 {
@@ -144,8 +152,6 @@ func handleConn(conn net.Conn) {
 }
 
 func main()  {
-    bs := []byte{0,2}
-    fmt.Printf("crc16:%02x\n", protocol.Crc16(bs))
     dbName := "detector"
     listen_address := ":10001"
     logPath := "./detector_server.log"
