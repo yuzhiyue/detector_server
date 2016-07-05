@@ -74,15 +74,6 @@ func handleMsg(detector * msg_hanler.Detector, cmd uint8, seq uint16, msg []byte
         OnDetectSelfReport(cmd, seq, detector, &request)
         break;
     }
-    case 0x0c: {
-        request := protocol.ReportRequest{};
-        if !request.Decode(msg){
-            return false;
-        }
-        OnReport(cmd, seq, detector, &request)
-        break;
-    }
-
     }
     return true
 }

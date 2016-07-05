@@ -34,18 +34,20 @@ func OnDetectorLogin(cmd uint8, seq uint16, detector * Detector, request * proto
     detector.SendMsg(cmd, seq, buff)
 }
 
-func HandleLoginMsgV1(detector * Detector, cmd uint8, seq uint16, msg []byte)  {
-    request := protocol.LoginRequest{};
+func HandleLoginMsgV1(detector * Detector, cmd uint8, seq uint16, msg []byte) bool {
+    request := protocol.LoginRequest{}
     if !request.Decode(msg){
-        return false;
+        return false
     }
     OnDetectorLogin(cmd, seq, detector, &request)
+    return true
 }
 
-func HandleLoginMsgV2(detector * Detector, cmd uint8, seq uint16, msg []byte)  {
+func HandleLoginMsgV2(detector * Detector, cmd uint8, seq uint16, msg []byte) bool {
     request := protocol.LoginRequest{};
     if !request.DecodeV2(msg){
         return false;
     }
     OnDetectorLogin(cmd, seq, detector, &request)
+    return true
 }
