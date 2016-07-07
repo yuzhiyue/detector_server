@@ -120,7 +120,8 @@ func CheckCRC16(buff []byte) bool {
     reader := bytes.NewReader(buff[len(buff)-2:])
     binary.Read(reader, binary.BigEndian, &crc16)
     crc16_cal := Crc16(buff[:len(buff)-2])
-    log.Printf("crc check:%d,%d\n", crc16, crc16_cal)
+    crc16_cal2 := Crc16(buff[:len(buff)-4])
+    log.Printf("crc check:%d, %d, %d\n", crc16, crc16_cal, crc16_cal2)
     return crc16 == crc16_cal
 }
 

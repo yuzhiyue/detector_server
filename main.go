@@ -123,7 +123,7 @@ func handleConn(conn net.Conn) {
             if header.MsgLen != 0 && buffUsed >= header.MsgLen {
                 if !protocol.CheckCRC16(buff[:header.MsgLen]) {
                     log.Println("check crc failed")
-                    return
+                    //return
                 }
                 handleRet := true;
                 if header.Cmd != 2 {
