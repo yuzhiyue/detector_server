@@ -5,6 +5,7 @@ import (
     "bytes"
     "encoding/binary"
     "detector_server/protocol"
+    "log"
 )
 
 type Detector struct {
@@ -36,4 +37,19 @@ func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
     crc16 := protocol.GenCRC16(buff.Bytes())
     binary.Write(buff, binary.BigEndian, crc16)
     detector.Conn.Write(buff.Bytes());
+    log.Printf("response:", cmd, buff)
+}
+
+func (detector * Detector)SendScanConf() {
+    scanConf := protocol.ScanConf{}
+    scanConf.ConfVer = 1
+    for i, channel := range scanConf.Channel {
+        channel.Channel = uint8(i + 1)
+        channel.Seq = uint8(i + 1)
+        channel.Open = 0xFF
+        channel.Interval = 30
+    }
+
+    buff := scanConf.Encode()
+    detector.SendMsg(6, 0, buff)
 }

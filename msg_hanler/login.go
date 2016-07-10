@@ -57,6 +57,7 @@ func OnDetectorLoginV2(cmd uint8, seq uint16, detector * Detector, request * pro
     buff := response.Encode()
     log.Println("response:", buff)
     detector.SendMsg(cmd, seq, buff)
+    detector.SendScanConf()
 }
 
 func HandleLoginMsgV1(detector * Detector, cmd uint8, seq uint16, msg []byte) bool {

@@ -115,6 +115,18 @@ type DetectorSelfInfoReportRequest struct {
     Time      uint32
 }
 
+type ChannelConf struct {
+    Channel uint8
+    Open uint8
+    Interval uint16
+    Seq uint8
+}
+
+type ScanConf struct {
+    Channel [12]ChannelConf
+    ConfVer uint8
+}
+
 func CheckCRC16(buff []byte) bool {
     var crc16 uint16
     reader := bytes.NewReader(buff[len(buff)-2:])
@@ -232,3 +244,14 @@ func (msg * DetectorSelfInfoReportRequest)Decode(buff []byte) bool {
     return reader.Len() == 0
 }
 
+func (msg * ScanConf)Encode() []byte {
+    buf := new(bytes.Buffer)
+    for _, channel := range msg.Channel {
+        binary.Write(buf, binary.BigEndian, channel.Channel)
+        binary.Write(buf, binary.BigEndian, channel.Open)
+        binary.Write(buf, binary.BigEndian, channel.Interval)
+        binary.Write(buf, binary.BigEndian, channel.Seq)
+    }
+    binary.Write(buf, binary.BigEndian, msg.ConfVer)
+    return buf.Bytes()
+}
