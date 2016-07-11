@@ -6,6 +6,7 @@ import (
     "encoding/binary"
     "detector_server/protocol"
     "log"
+    "encoding/hex"
 )
 
 type Detector struct {
@@ -37,7 +38,7 @@ func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
     crc16 := protocol.GenCRC16(buff.Bytes())
     binary.Write(buff, binary.BigEndian, crc16)
     detector.Conn.Write(buff.Bytes());
-    log.Println("response", cmd, buff)
+    log.Println("response:", cmd, "\n", hex.Dump(buff.Bytes()))
 }
 
 func (detector * Detector)SendScanConf() {

@@ -103,7 +103,7 @@ func handleConn(conn net.Conn) {
         }
         detector.LastRecvTime = uint32(time.Now().Unix())
         log.Println("recv data, len:", len)
-        log.Println("dump data, ", hex.Dump(buff[buffUsed: buffUsed+uint16(len)]))
+        log.Println("dump data:\n", hex.Dump(buff[buffUsed: buffUsed+uint16(len)]))
         buffUsed += uint16(len)
         for {
             if header.MsgLen == 0 {
