@@ -20,13 +20,13 @@ func InitES() {
 }
 
 func InitIndex()  {
-    exists, err := es_client.IndexExists("detector").Do()
+    exists, err := es_client.IndexExists(dbName).Do()
     if err != nil {
         // Handle error
         panic(err)
     }
     if !exists {
-        createIndex, err := es_client.CreateIndex("detecotr").Do()
+        createIndex, err := es_client.CreateIndex(dbName).Do()
         if err != nil {
             // Handle error
             panic(err)
@@ -73,7 +73,7 @@ func InitDB(db string)  {
 func GetDetectorInfo(mac string, result interface{}) error {
     session := GetSession()
     defer session.Close()
-    c := session.DB("detector").C("detector_info")
+    c := session.DB(dbName).C("detector_info")
     return c.FindId(mac).One(result)
 }
 
@@ -87,21 +87,21 @@ func CreateDetector(mac string, imei string) {
 func UpdateLoginTime(mac string)  {
     session := GetSession()
     defer session.Close()
-    c := session.DB("detector").C("detector_info")
+    c := session.DB(dbName).C("detector_info")
     c.UpsertId(mac, bson.M{"$set": bson.M{"last_login_time":uint32(time.Now().Unix())}})
 }
 
 func UpdateDetectorLastActiveTime(mac string, time uint32)  {
     session := GetSession()
     defer session.Close()
-    c := session.DB("detector").C("detector_info")
+    c := session.DB(dbName).C("detector_info")
     c.Update(bson.M{"_id":mac}, bson.M{"$set": bson.M{"last_active_time":time}})
 }
 
 func UpdateDetectorLocate(mac string, info * protocol.DetectorSelfInfoReportRequest)  {
     session := GetSession()
     defer session.Close()
-    c := session.DB("detector").C("detector_info")
+    c := session.DB(dbName).C("detector_info")
     c.Update(bson.M{"_id":mac},  bson.M{"$set": bson.M{"report_longitude":float64(info.Longitude) / protocol.GeoMmultiple, "report_latitude":float64(info.Latitude) / protocol.GeoMmultiple, "mcc":info.Mcc, "mnc":info.Mnc,
         "lac":info.Lac, "cell_id":info.CellId, "last_active_time":uint32(time.Now().Unix())}})
 }
@@ -109,7 +109,7 @@ func UpdateDetectorLocate(mac string, info * protocol.DetectorSelfInfoReportRequ
 func SaveDetectorReport(apMac string, reportInfos * list.List)  {
     session := GetSession()
     defer session.Close()
-    c := session.DB("detector").C("detector_report")
+    c := session.DB(dbName).C("detector_report")
     bulk := c.Bulk()
     for e := reportInfos.Front(); e != nil; e = e.Next(){
         info := e.Value.(*protocol.ReportInfo)
@@ -128,7 +128,7 @@ func GetGeoByBaseStation(lac int, cell int, mcc int) (float64, float64)  {
     defer session.Close()
     if lac != 0 && cell != 0 {
         result := bson.M{}
-        c := session.DB("detector").C("base_station_info")
+        c := session.DB(dbName).C("base_station_info")
         err := c.Find(bson.M{"lac":lac, "cell_id":cell, "mcc":mcc}).One(&result)
         if err == nil {
             return GetNumber(result, "longitude"), GetNumber(result, "latitude")
