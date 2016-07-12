@@ -24,12 +24,7 @@ func OnReport(cmd uint8, seq uint16,detector *Detector, request * protocol.Repor
         if (detector.Latitude != 0 && detector.Longitude != 0) {
             info.Longitude, info.Latitude = detector.Longitude, detector.Latitude
         }
-    }
-
-    if detector.ProtoVer == 1 {
-        db.SaveDetectorReport(detector.IMEI, &request.ReportList)
-    } else {
-        db.SaveDetectorReport(detector.MAC, &request.ReportList)
+        detector.ReportData[info.MAC] = info
     }
     detector.SendMsg(cmd, seq, nil)
 }

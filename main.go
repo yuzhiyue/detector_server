@@ -65,6 +65,7 @@ func handleMsg(detector * msg_hanler.Detector, cmd uint8, seq uint16, msg []byte
         detector.SendMsg(cmd, 0, nil)
         //db.UpdateDetectorLastActiveTime(detector.MAC, uint32(time.Now().Unix()))
         db.UpdateDetectorLastActiveTime(detector.IMEI, uint32(time.Now().Unix()))
+        detector.SaveReport()
         break;
     }
     case 0x03: {

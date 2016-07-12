@@ -7,7 +7,15 @@ import (
     "detector_server/protocol"
     "log"
     "encoding/hex"
+    "time"
+    "detector_server/db"
 )
+
+type ReportInfo struct {
+    Longitude int32
+    Latitude  int32
+    Time uint32
+}
 
 type Detector struct {
     Id        int
@@ -20,6 +28,8 @@ type Detector struct {
     Status    int
     LastRecvTime uint32
     Conn      net.Conn
+    ReportData map[string]*protocol.ReportInfo
+    LastSaveReportTime uint32
 }
 
 func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
@@ -54,4 +64,18 @@ func (detector * Detector)SendScanConf() {
 
     buff := scanConf.Encode()
     detector.SendMsg(6, 0, buff)
+}
+
+func (detector * Detector)SaveReport() {
+    now := time.Now().Unix()
+    if now - detector.LastSaveReportTime < 10 {
+        return
+    }
+    detector.LastSaveReportTime = now
+    if detector.ProtoVer == 1 {
+        db.SaveDetectorReport(detector.IMEI, &detector.ReportData)
+    } else {
+        db.SaveDetectorReport(detector.MAC, &detector.ReportData)
+    }
+    detector.ReportData = make(map[string]*protocol.ReportInfo)
 }

@@ -25,6 +25,7 @@ func OnDetectorLogin(cmd uint8, seq uint16, detector * Detector, request * proto
     detector.IMEI = request.IMEI
     detector.Status = 1
     detector.ProtoVer = request.ProtoVer
+    detector.ReportData = make(map[string]*protocol.ReportInfo)
 
     response := protocol.LoginResponse{}
     response.ProtoVer = protocol.MaxProtoVer
@@ -50,6 +51,7 @@ func OnDetectorLoginV2(cmd uint8, seq uint16, detector * Detector, request * pro
     detector.IMEI = request.IMEI
     detector.Status = 1
     detector.ProtoVer = request.ProtoVer
+    detector.ReportData = make(map[string]*protocol.ReportInfo)
 
     response := protocol.LoginResponse{}
     response.ProtoVer = protocol.MaxProtoVer

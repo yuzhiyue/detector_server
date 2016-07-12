@@ -8,6 +8,7 @@ import (
     "log"
     "gopkg.in/olivere/elastic.v3"
     "detector_server/protocol"
+    "detector_server/msg_hanler"
 )
 var es_client *elastic.Client
 func InitES() {
@@ -106,13 +107,12 @@ func UpdateDetectorLocate(mac string, info * protocol.DetectorSelfInfoReportRequ
         "lac":info.Lac, "cell_id":info.CellId, "last_active_time":uint32(time.Now().Unix())}})
 }
 
-func SaveDetectorReport(apMac string, reportInfos * list.List)  {
+func SaveDetectorReport(apMac string, reportInfos * map[string]*protocol.ReportInfo)  {
     session := GetSession()
     defer session.Close()
     c := session.DB(dbName).C("detector_report")
     bulk := c.Bulk()
-    for e := reportInfos.Front(); e != nil; e = e.Next(){
-        info := e.Value.(*protocol.ReportInfo)
+    for _, info := range reportInfos{
         log.Println(*info)
         if(info.Longitude == 0 || info.Latitude == 0) {
             continue
