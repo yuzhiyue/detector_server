@@ -81,6 +81,7 @@ func handleMsg(detector * msg_hanler.Detector, cmd uint8, seq uint16, msg []byte
             return false;
         }
         OnDetectSelfReport(cmd, seq, detector, &request)
+        detector.SaveReport()
         break;
     }
     }
