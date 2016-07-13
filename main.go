@@ -162,7 +162,7 @@ func main()  {
     listen_address := ":10001"
     logPath := "./detector_server.log"
     if len(os.Args) == 2 && os.Args[1] == "test_svr" {
-        dbName = "test_detector"
+        dbName = "detector"
         listen_address = ":11001"
         logPath = "./test_detector_server.log"
     }
