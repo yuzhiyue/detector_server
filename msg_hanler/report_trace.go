@@ -4,7 +4,6 @@ import (
     "log"
     "time"
     "detector_server/protocol"
-    "detector_server/db"
 )
 
 func OnReport(cmd uint8, seq uint16,detector *Detector, request * protocol.ReportRequest)  {

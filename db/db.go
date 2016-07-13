@@ -3,12 +3,10 @@ package db
 import (
     "gopkg.in/mgo.v2"
     "gopkg.in/mgo.v2/bson"
-    "container/list"
     "time"
     "log"
     "gopkg.in/olivere/elastic.v3"
     "detector_server/protocol"
-    "detector_server/msg_hanler"
 )
 var es_client *elastic.Client
 func InitES() {
@@ -112,7 +110,7 @@ func SaveDetectorReport(apMac string, reportInfos * map[string]*protocol.ReportI
     defer session.Close()
     c := session.DB(dbName).C("detector_report")
     bulk := c.Bulk()
-    for _, info := range reportInfos{
+    for _, info := range *reportInfos{
         log.Println(*info)
         if(info.Longitude == 0 || info.Latitude == 0) {
             continue
