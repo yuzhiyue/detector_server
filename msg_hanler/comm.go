@@ -9,6 +9,7 @@ import (
     "encoding/hex"
     "time"
     "detector_server/db"
+    "gopkg.in/mgo.v2/bson"
 )
 
 type ReportInfo struct {
@@ -78,4 +79,14 @@ func (detector * Detector)SaveReport() {
         db.SaveDetectorReport(detector.MAC, &detector.ReportData)
     }
     detector.ReportData = make(map[string]*protocol.ReportInfo)
+}
+
+func (detector *Detector) ReloadDetectorInfo() {
+    result := bson.M{}
+    err := db.GetDetectorInfo(detector.IMEI, &result)
+    if err == nil {
+        detector.Longitude = int32(db.GetNumber(result, "longitude") * protocol.GeoMmultiple)
+        detector.Latitude = int32(db.GetNumber(result, "latitude") * protocol.GeoMmultiple)
+        detector.GeoUpdateType = int(db.GetNumber(result, "geo_update_type"))
+    }
 }

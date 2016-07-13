@@ -68,7 +68,7 @@ func handleMsg(detector * msg_hanler.Detector, cmd uint8, seq uint16, msg []byte
         } else {
             db.UpdateDetectorLastActiveTime(detector.MAC, uint32(time.Now().Unix()))
         }
-
+        detector.ReloadDetectorInfo()
         detector.SaveReport()
         break;
     }
