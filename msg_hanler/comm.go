@@ -83,7 +83,13 @@ func (detector * Detector)SaveReport() {
 
 func (detector *Detector) ReloadDetectorInfo() {
     result := bson.M{}
-    err := db.GetDetectorInfo(detector.IMEI, &result)
+    var err error;
+    if detector.ProtoVer == 1 {
+        err = db.GetDetectorInfo(detector.IMEI, &result)
+    } else {
+        err = db.GetDetectorInfo(detector.MAC, &result)
+    }
+
     if err == nil {
         detector.Longitude = int32(db.GetNumber(result, "longitude") * protocol.GeoMmultiple)
         detector.Latitude = int32(db.GetNumber(result, "latitude") * protocol.GeoMmultiple)
