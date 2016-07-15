@@ -60,7 +60,7 @@ func (detector * Detector)SendScanConf() {
         channel.Channel = uint8(i + 1)
         channel.Seq = uint8(i + 1)
         channel.Open = 0xFF
-        channel.Interval = 30
+        channel.Interval = 2
     }
 
     buff := scanConf.Encode()
