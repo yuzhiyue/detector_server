@@ -85,7 +85,7 @@ func (detector * Detector)SendScanConf() {
             channel.Interval = uint16(e.Interval)
         }
     }
-
+    log.Println("send scan conf", detector.MAC, detector.ScanConf)
     buff := scanConf.Encode()
     detector.SendMsg(6, 0, buff)
 }
