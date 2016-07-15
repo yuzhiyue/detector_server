@@ -12,6 +12,11 @@ import (
     "gopkg.in/mgo.v2/bson"
 )
 
+type ScanConf struct {
+    Channel uint32
+    Interval uint32
+}
+
 type ReportInfo struct {
     Longitude int32
     Latitude  int32
@@ -31,6 +36,7 @@ type Detector struct {
     Conn      net.Conn
     ReportData map[string]*protocol.ReportInfo
     LastSaveReportTime uint32
+    ScanConf []ScanConf;
 }
 
 func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
@@ -55,12 +61,29 @@ func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
 func (detector * Detector)SendScanConf() {
     scanConf := protocol.ScanConf{}
     scanConf.ConfVer = 1
-    for i := 0; i < len(scanConf.Channel); i++ {
-        channel := &scanConf.Channel[i]
-        channel.Channel = uint8(i + 1)
-        channel.Seq = uint8(i + 1)
-        channel.Open = 0xFF
-        channel.Interval = 2
+    if len(detector.ScanConf) == 0 {
+        for i := 0; i < len(scanConf.Channel); i++ {
+            channel := &scanConf.Channel[i]
+            channel.Channel = uint8(i + 1)
+            channel.Seq = uint8(i + 1)
+            channel.Open = 0xFF
+            channel.Interval = 2
+        }
+    } else {
+        for i := 0; i < len(scanConf.Channel); i++ {
+            channel := &scanConf.Channel[i]
+            channel.Channel = uint8(i + 1)
+            channel.Seq = uint8(i + 1)
+            channel.Open = 0x0
+            channel.Interval = 0
+        }
+        for i, e := range detector.ScanConf {
+            channel := &scanConf.Channel[e.Channel - 1]
+            channel.Channel = uint8(e.Channel)
+            channel.Seq = uint8(i + 1)
+            channel.Open = 0xFF
+            channel.Interval = uint16(e.Interval)
+        }
     }
 
     buff := scanConf.Encode()
