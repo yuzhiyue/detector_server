@@ -80,7 +80,7 @@ func (detector * Detector)SendScanConf() {
             channel.Interval = 0
         }
         for _, e := range detector.ScanConf {
-            if e.Channel > len (scanConf.Channel) {
+            if e.Channel > uint32(len(scanConf.Channel)) {
                 continue
             }
             channel := &scanConf.Channel[e.Channel - 1]
