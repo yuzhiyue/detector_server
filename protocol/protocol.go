@@ -123,7 +123,7 @@ type ChannelConf struct {
 }
 
 type ScanConf struct {
-    Channel [12]ChannelConf
+    Channel [13]ChannelConf
     ConfVer uint8
 }
 

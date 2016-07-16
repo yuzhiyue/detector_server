@@ -46,6 +46,7 @@ func OnDetectorLoginV2(cmd uint8, seq uint16, detector * Detector, request * pro
         detector.Longitude = int32(db.GetNumber(result, "longitude") * protocol.GeoMmultiple)
         detector.Latitude = int32(db.GetNumber(result, "latitude") * protocol.GeoMmultiple)
         detector.GeoUpdateType = int(db.GetNumber(result, "geo_update_type"))
+        detector.ScanConfUpdateTime = uint32(db.GetNumber(result, "scan_conf_update_time"))
         scanConf, ok := result["scan_conf"]
         if ok {
             for _, e := range scanConf.([]interface {}) {

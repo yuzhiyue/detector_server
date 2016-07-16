@@ -36,7 +36,9 @@ type Detector struct {
     Conn      net.Conn
     ReportData map[string]*protocol.ReportInfo
     LastSaveReportTime uint32
-    ScanConf []ScanConf;
+    ScanConf []ScanConf
+    ScanConfUpdateTime uint32
+    ScanConfSendTime uint32
 }
 
 func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
@@ -77,16 +79,19 @@ func (detector * Detector)SendScanConf() {
             channel.Open = 0x0
             channel.Interval = 0
         }
-        for i, e := range detector.ScanConf {
+        for _, e := range detector.ScanConf {
+            if e.Channel > len (scanConf.Channel) {
+                continue
+            }
             channel := &scanConf.Channel[e.Channel - 1]
             channel.Channel = uint8(e.Channel)
-            channel.Seq = uint8(i + 1)
             channel.Open = 0xFF
             channel.Interval = uint16(e.Interval)
         }
     }
     log.Println("send scan conf", detector.MAC, scanConf)
     buff := scanConf.Encode()
+    detector.ScanConfSendTime = uint32(time.Now().Unix())
     detector.SendMsg(6, 0, buff)
 }
 
@@ -112,10 +117,24 @@ func (detector *Detector) ReloadDetectorInfo() {
     } else {
         err = db.GetDetectorInfo(detector.MAC, &result)
     }
-
     if err == nil {
         detector.Longitude = int32(db.GetNumber(result, "longitude") * protocol.GeoMmultiple)
         detector.Latitude = int32(db.GetNumber(result, "latitude") * protocol.GeoMmultiple)
         detector.GeoUpdateType = int(db.GetNumber(result, "geo_update_type"))
+    }
+    detector.ScanConfUpdateTime = uint32(db.GetNumber(result, "scan_conf_update_time"))
+    scanConf, ok := result["scan_conf"]
+    if ok {
+        for _, e := range scanConf.([]interface {}) {
+            conf := ScanConf{}
+            conf.Channel = uint32(db.GetNumber(e.(bson.M), "channel"))
+            conf.Interval = uint32(db.GetNumber(e.(bson.M), "interval"))
+            detector.ScanConf = append(detector.ScanConf, conf)
+        }
+    }
+    if detector.ProtoVer != 1 {
+        if detector.ScanConfSendTime < detector.ScanConfUpdateTime {
+            detector.SendScanConf()
+        }
     }
 }
