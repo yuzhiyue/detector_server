@@ -48,7 +48,7 @@ func OnDetectSelfReport(cmd uint8, seq uint16, detector *msg_hanler.Detector, re
 }
 
 func handleMsg(detector * msg_hanler.Detector, cmd uint8, seq uint16, msg []byte) bool {
-    log.Println("recv request", detector.MAC, detector.IMEI ,"cmd:", cmd, msg)
+    log.Println("recv request", detector.MAC, detector.IMEI ,"cmd:", cmd)
     switch cmd {
     case 0x01: {
         msg_hanler.HandleLoginMsgV1(detector, cmd, seq, msg)
