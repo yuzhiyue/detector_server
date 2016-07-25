@@ -97,7 +97,7 @@ func (detector * Detector)SendScanConf() {
 
 func (detector * Detector)SaveReport() {
     now := uint32(time.Now().Unix())
-    if now - detector.LastSaveReportTime < 10 {
+    if now - detector.LastSaveReportTime < 60 {
         return
     }
     detector.LastSaveReportTime = now
