@@ -116,6 +116,8 @@ func SaveDetectorReport(apMac string, reportInfos * map[string]*protocol.ReportI
         if(info.Longitude == 0 || info.Latitude == 0) {
             continue
         }
+        bulk.Insert(bson.M{"ap_mac":apMac, "device_mac":info.MAC, "rssi":info.RSSI, "longitude":float64(info.Longitude) / protocol.GeoMmultiple, "latitude":float64(info.Latitude) / protocol.GeoMmultiple, "report_longitude":float64(info.ReportLongitude) / protocol.GeoMmultiple, "report_latitude":float64(info.ReportLatitude) / protocol.GeoMmultiple, "mcc":info.Mcc, "mnc":info.Mnc,
+            "lac":info.Lac, "cell_id":info.CellId, "time":info.Time, "channel":info.Channel})
         doc := bson.M{"ap_mac":apMac, "device_mac":info.MAC, "rssi":info.RSSI, "longitude":float64(info.Longitude) / protocol.GeoMmultiple, "latitude":float64(info.Latitude) / protocol.GeoMmultiple, "report_longitude":float64(info.ReportLongitude) / protocol.GeoMmultiple, "report_latitude":float64(info.ReportLatitude) / protocol.GeoMmultiple, "mcc":info.Mcc, "mnc":info.Mnc,
             "lac":info.Lac, "cell_id":info.CellId, "time":info.Time}
         bulk.Insert(doc)

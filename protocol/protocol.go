@@ -99,6 +99,7 @@ type ReportInfo struct {
     Mnc       uint8
     Lac       uint16
     CellId    uint16
+    Channel   uint8
     Time      uint32
 }
 type ReportRequest struct {
@@ -209,7 +210,7 @@ func (msg * ReportRequest)DecodeV2(buff []byte) bool {
         info.MAC = byte2string(tmp[:6], true)
         binary.Read(reader, binary.BigEndian, tmp[:6]) // 跳过来源MAC
         binary.Read(reader, binary.BigEndian, &info.RSSI)
-        binary.Read(reader, binary.BigEndian, tmp[:1]) // 跳过信道
+        binary.Read(reader, binary.BigEndian, &info.Channel)
         info.Latitude = 0
         info.Longitude = 0
         binary.Read(reader, binary.BigEndian, &info.Time)
