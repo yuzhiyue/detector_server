@@ -175,8 +175,9 @@ func main()  {
     //logFile.Close()
     log.SetOutput(logFile)
     log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-
     db.InitDB(dbName)
+    db.InitES()
+    db.InitESIndex()
     listen, err := net.Listen("tcp4", listen_address)
     if err != nil {
         return

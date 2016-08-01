@@ -18,7 +18,7 @@ func InitES() {
     }
 }
 
-func InitIndex()  {
+func InitESIndex()  {
     exists, err := es_client.IndexExists(dbName).Do()
     if err != nil {
         // Handle error
