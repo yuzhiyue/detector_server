@@ -81,6 +81,28 @@ func CreateDetector(mac string, imei string) {
     defer session.Close()
     c := session.DB(dbName).C("detector_info")
     c.Insert(bson.M{"_id":mac, "imei":imei, "company":"01", "last_active_time":uint32(time.Now().Unix()), "last_login_time":uint32(time.Now().Unix())})
+    CreateDetectorNo(mac)
+}
+
+func CreateDetectorNo(mac string) int {
+    session := GetSession()
+    defer session.Close()
+     change := mgo.Change{
+             Update: bson.M{"$inc": bson.M{"value": 1}},
+             ReturnNew: true,
+             Upsert: true,
+     }
+    doc := bson.M{}
+    _, err := session.DB(dbName).C("ids").Find(bson.M{"_id": "detector_no"}).Apply(change, &doc)
+    if err == nil {
+        no := int(GetNumber(doc, "value"))
+        c := session.DB(dbName).C("detector_info")
+        err = c.UpdateId(mac, bson.M{"$set": bson.M{"no":no}})
+        if err == nil {
+            return no
+        }
+    }
+    return 0
 }
 
 func UpdateLoginTime(mac string)  {

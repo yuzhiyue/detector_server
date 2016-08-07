@@ -24,7 +24,7 @@ type ReportInfo struct {
 }
 
 type Detector struct {
-    Id        int
+    No        int
     ProtoVer  uint8
     MAC       string
     IMEI      string

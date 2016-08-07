@@ -17,9 +17,13 @@ func OnDetectorLogin(cmd uint8, seq uint16, detector * Detector, request * proto
         //db.CreateDetector(request.MAC, request.IMEI)
     } else {
         db.UpdateLoginTime(request.IMEI)
+        detector.No = int(db.GetNumber(result, "no"))
         detector.Longitude = int32(db.GetNumber(result, "longitude") * protocol.GeoMmultiple)
         detector.Latitude = int32(db.GetNumber(result, "latitude") * protocol.GeoMmultiple)
         detector.GeoUpdateType = int(db.GetNumber(result, "geo_update_type"))
+    }
+    if detector.No == 0 {
+        detector.No = db.CreateDetectorNo(request.IMEI)
     }
     detector.MAC = request.MAC
     detector.IMEI = request.IMEI
@@ -43,6 +47,7 @@ func OnDetectorLoginV2(cmd uint8, seq uint16, detector * Detector, request * pro
         db.CreateDetector(request.MAC, request.IMEI)
     } else {
         db.UpdateLoginTime(request.MAC)
+        detector.No = int(db.GetNumber(result, "no"))
         detector.Longitude = int32(db.GetNumber(result, "longitude") * protocol.GeoMmultiple)
         detector.Latitude = int32(db.GetNumber(result, "latitude") * protocol.GeoMmultiple)
         detector.GeoUpdateType = int(db.GetNumber(result, "geo_update_type"))
@@ -56,6 +61,9 @@ func OnDetectorLoginV2(cmd uint8, seq uint16, detector * Detector, request * pro
                 detector.ScanConf = append(detector.ScanConf, conf)
             }
         }
+    }
+    if detector.No == 0 {
+        detector.No = db.CreateDetectorNo(request.MAC)
     }
     detector.MAC = request.MAC
     detector.IMEI = request.IMEI
