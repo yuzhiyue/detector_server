@@ -11,7 +11,7 @@ import (
 var es_client *elastic.Client
 func InitES() {
     var err error
-    es_client, err = elastic.NewClient(elastic.SetURL("http://120.24.7.62:9200"))
+    es_client, err = elastic.NewClient(elastic.SetURL("http://120.24.7.62:29200"))
     if err != nil {
         // Handle error
         panic(err)
