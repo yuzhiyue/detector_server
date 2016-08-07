@@ -13,7 +13,7 @@ func OnDetectorLogin(cmd uint8, seq uint16, detector * Detector, request * proto
     result := bson.M{}
     err := db.GetDetectorInfo(request.IMEI, &result)
     if err != nil {
-        db.CreateDetector(request.IMEI, request.MAC)
+        detector.No = db.CreateDetector(request.IMEI, request.MAC)
         //db.CreateDetector(request.MAC, request.IMEI)
     } else {
         db.UpdateLoginTime(request.IMEI)
@@ -44,7 +44,7 @@ func OnDetectorLoginV2(cmd uint8, seq uint16, detector * Detector, request * pro
     result := bson.M{}
     err := db.GetDetectorInfo(request.MAC, &result)
     if err != nil {
-        db.CreateDetector(request.MAC, request.IMEI)
+        detector.No = db.CreateDetector(request.MAC, request.IMEI)
     } else {
         db.UpdateLoginTime(request.MAC)
         detector.No = int(db.GetNumber(result, "no"))

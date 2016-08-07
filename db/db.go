@@ -81,7 +81,7 @@ func CreateDetector(mac string, imei string) {
     defer session.Close()
     c := session.DB(dbName).C("detector_info")
     c.Insert(bson.M{"_id":mac, "imei":imei, "company":"01", "last_active_time":uint32(time.Now().Unix()), "last_login_time":uint32(time.Now().Unix())})
-    CreateDetectorNo(mac)
+    return CreateDetectorNo(mac)
 }
 
 func CreateDetectorNo(mac string) int {
