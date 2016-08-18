@@ -76,7 +76,7 @@ func GetDetectorInfo(mac string, result interface{}) error {
     return c.FindId(mac).One(result)
 }
 
-func CreateDetector(mac string, imei string) {
+func CreateDetector(mac string, imei string) int {
     session := GetSession()
     defer session.Close()
     c := session.DB(dbName).C("detector_info")

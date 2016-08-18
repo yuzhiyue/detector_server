@@ -128,6 +128,12 @@ type ScanConf struct {
     ConfVer uint8
 }
 
+type Reboot struct {
+    Time uint32
+    ProtoVer uint8
+    Reversed [2]byte
+}
+
 func CheckCRC16(buff []byte) bool {
     var crc16 uint16
     reader := bytes.NewReader(buff[len(buff)-2:])
@@ -254,5 +260,13 @@ func (msg * ScanConf)Encode() []byte {
         binary.Write(buf, binary.BigEndian, channel.Seq)
     }
     binary.Write(buf, binary.BigEndian, msg.ConfVer)
+    return buf.Bytes()
+}
+
+func (msg * Reboot)Encode() []byte {
+    buf := new(bytes.Buffer)
+    binary.Write(buf, binary.BigEndian, msg.Time)
+    binary.Write(buf, binary.BigEndian, msg.ProtoVer)
+    binary.Write(buf, binary.BigEndian, msg.Reversed)
     return buf.Bytes()
 }

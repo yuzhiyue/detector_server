@@ -65,7 +65,12 @@ func (detector * Detector)Reboot() {
     if detector.ProtoVer == 1 {
         return
     }
-
+    response := protocol.Reboot{}
+    response.ProtoVer = 1
+    response.Time = uint32(time.Now().Unix())
+    buff := response.Encode()
+    log.Println("send reboot:", detector.MAC)
+    detector.SendMsg(0x0B, 0, buff)
 }
 
 func (detector * Detector)SendScanConf() {
