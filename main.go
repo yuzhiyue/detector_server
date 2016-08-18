@@ -70,7 +70,7 @@ func handleMsg(detector * msg_hanler.Detector, cmd uint8, seq uint16, msg []byte
         }
         detector.ReloadDetectorInfo()
         detector.SaveReport()
-        if uint32(time.Now().Unix()) - detector.LastRecvReportTime > 3600 {
+        if uint32(time.Now().Unix()) - detector.LastRecvReportTime > 1800 {
             detector.Reboot()
         }
         break;
