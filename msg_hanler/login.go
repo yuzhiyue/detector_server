@@ -30,7 +30,7 @@ func OnDetectorLogin(cmd uint8, seq uint16, detector * Detector, request * proto
     detector.Status = 1
     detector.ProtoVer = request.ProtoVer
     detector.ReportData = make(map[string]*protocol.ReportInfo)
-
+    detector.LastRecvReportTime = uint32(time.Now().Unix())
     response := protocol.LoginResponse{}
     response.ProtoVer = protocol.MaxProtoVer
     response.Time = uint32(time.Now().Unix())
@@ -70,7 +70,7 @@ func OnDetectorLoginV2(cmd uint8, seq uint16, detector * Detector, request * pro
     detector.Status = 1
     detector.ProtoVer = request.ProtoVer
     detector.ReportData = make(map[string]*protocol.ReportInfo)
-
+    detector.LastRecvReportTime = uint32(time.Now().Unix())
     response := protocol.LoginResponse{}
     response.ProtoVer = protocol.MaxProtoVer
     response.Time = uint32(time.Now().Unix())

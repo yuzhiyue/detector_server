@@ -7,6 +7,7 @@ import (
 )
 
 func OnReport(cmd uint8, seq uint16,detector *Detector, request * protocol.ReportRequest)  {
+    detector.LastRecvReportTime = uint32(time.Now().Unix());
     if detector.Status != 1 {
         log.Println("invalid detector report")
         return

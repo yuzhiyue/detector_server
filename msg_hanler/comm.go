@@ -36,6 +36,7 @@ type Detector struct {
     Conn      net.Conn
     ReportData map[string]*protocol.ReportInfo
     LastSaveReportTime uint32
+    LastRecvReportTime uint32
     ScanConf []ScanConf
     ScanConfUpdateTime uint32
     ScanConfSendTime uint32
@@ -58,6 +59,13 @@ func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
     binary.Write(buff, binary.BigEndian, crc16)
     detector.Conn.Write(buff.Bytes());
     log.Println("response:", cmd, "\n", hex.Dump(buff.Bytes()))
+}
+
+func (detector * Detector)Reboot() {
+    if detector.ProtoVer == 1 {
+        return
+    }
+
 }
 
 func (detector * Detector)SendScanConf() {
