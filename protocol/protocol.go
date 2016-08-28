@@ -70,6 +70,15 @@ func byte2string(b []byte, startWithZero bool) string {
     return buff.String()
 }
 
+func ByteString(p []byte) string {
+    for i := 0; i < len(p); i++ {
+        if p[i] == 0 {
+            return string(p[0:i])
+        }
+    }
+    return string(p)
+}
+
 type MsgHeader struct {
     Magic uint16
     MsgLen uint16
@@ -174,7 +183,7 @@ func (msg * LoginRequest)DecodeV2(buff []byte) bool {
     binary.Read(reader, binary.BigEndian, tmp[:6])
     msg.MAC = byte2string(tmp[:6], true)
     binary.Read(reader, binary.BigEndian, tmp[:64])
-    msg.FirmwareVer = string(tmp)
+    msg.FirmwareVer = ByteString(tmp[:64])
     binary.Read(reader, binary.BigEndian, tmp[:64])
     binary.Read(reader, binary.BigEndian, &msg.ProtoVer)
     return reader.Len() == 0
