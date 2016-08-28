@@ -69,6 +69,12 @@ func handleMsg(detector * msg_hanler.Detector, cmd uint8, seq uint16, msg []byte
         }
         detector.ReloadDetectorInfo()
         detector.SaveReport()
+        if detector.ProtoVer >= 3 {
+            newFirmware := detector.CheckNewFirmware()
+            if newFirmware != "" {
+                detector.Reboot()
+            }
+        }
         if uint32(time.Now().Unix()) - detector.LastRecvReportTime > 1800 {
             detector.Reboot()
         }

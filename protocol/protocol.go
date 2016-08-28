@@ -81,6 +81,7 @@ type LoginRequest struct {
     IMEI string
     MAC string
     ProtoVer uint8
+    FirmwareVer string
 }
 
 type LoginResponse struct {
@@ -173,6 +174,7 @@ func (msg * LoginRequest)DecodeV2(buff []byte) bool {
     binary.Read(reader, binary.BigEndian, tmp[:6])
     msg.MAC = byte2string(tmp[:6], true)
     binary.Read(reader, binary.BigEndian, tmp[:64])
+    msg.FirmwareVer = string(tmp)
     binary.Read(reader, binary.BigEndian, tmp[:64])
     binary.Read(reader, binary.BigEndian, &msg.ProtoVer)
     return reader.Len() == 0

@@ -40,6 +40,7 @@ type Detector struct {
     ScanConf []ScanConf
     ScanConfUpdateTime uint32
     ScanConfSendTime uint32
+    FirmwareVer string
 }
 
 func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
@@ -71,6 +72,34 @@ func (detector * Detector)Reboot() {
     buff := response.Encode()
     log.Println("send reboot:", detector.MAC)
     detector.SendMsg(0x0B, 0, buff)
+}
+
+func (detector * Detector)CheckNewFirmware() string {
+    session := db.GetSession()
+    defer session.Close()
+    result := bson.M{}
+    c := session.DB("platform").C("detector_upgrade")
+    err := c.Find(bson.M{"mac_list": detector.MAC}).One(&result)
+    if err == nil {
+        newVersion := result["version"].(string)
+        if newVersion != detector.FirmwareVer {
+            filename := result["filename"].(string)
+            return filename;
+        }
+    }
+    return ""
+}
+
+func (detector * Detector)UpgradeFirmware(url string) {
+    if detector.ProtoVer == 1 {
+        return
+    }
+    response := protocol.UpgradeFirmware{}
+    copy(response.FirmwareUrl[:], url)
+    response.FirmwareUrl[len(url)] = 0
+    buff := response.Encode()
+    log.Println("send UpgradeFirmware:", detector.MAC)
+    detector.SendMsg(0x13, 0, buff)
 }
 
 func (detector * Detector)SendScanConf() {
