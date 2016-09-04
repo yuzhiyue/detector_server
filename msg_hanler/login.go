@@ -69,6 +69,7 @@ func OnDetectorLoginV2(cmd uint8, seq uint16, detector * Detector, request * pro
     detector.IMEI = request.IMEI
     detector.Status = 1
     detector.ProtoVer = request.ProtoVer
+    detector.FirmwareVer = request.FirmwareVer
     detector.ReportData = make(map[string]*protocol.ReportInfo)
     detector.LastRecvReportTime = uint32(time.Now().Unix())
 

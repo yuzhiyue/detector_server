@@ -8,6 +8,8 @@ import (
     "gopkg.in/olivere/elastic.v3"
     "detector_server/protocol"
 )
+
+var reportChannel chan *protocol.ReportInfo
 var es_client *elastic.Client
 func InitES() {
     var err error
@@ -66,6 +68,8 @@ func InitDB(db string)  {
     }
     g_session.SetMode(mgo.Monotonic, true)
     dbName = db
+    reportChannel = make(chan *protocol.ReportInfo, 10000)
+    go dbWiter();
     log.Println("connect to db succ")
 }
 
@@ -128,25 +132,14 @@ func UpdateDetectorLocate(mac string, info * protocol.DetectorSelfInfoReportRequ
 }
 
 func SaveDetectorReport(apMac string, reportInfos * map[string]*protocol.ReportInfo)  {
-    session := GetSession()
-    defer session.Close()
-    c := session.DB(dbName).C("detector_report")
-    bulk := c.Bulk()
-    //es_bulk := es_client.Bulk()
     for _, info := range *reportInfos{
+        info.ApMAC = apMac
         log.Println(*info)
         if(info.Longitude == 0 || info.Latitude == 0) {
             continue
         }
-        doc := bson.M{"ap_mac":apMac, "device_mac":info.MAC, "rssi":info.RSSI, "longitude":float64(info.Longitude) / protocol.GeoMmultiple, "latitude":float64(info.Latitude) / protocol.GeoMmultiple, "report_longitude":float64(info.ReportLongitude) / protocol.GeoMmultiple, "report_latitude":float64(info.ReportLatitude) / protocol.GeoMmultiple, "mcc":info.Mcc, "mnc":info.Mnc,
-            "lac":info.Lac, "cell_id":info.CellId, "time":info.Time, "channel":info.Channel}
-        bulk.Insert(doc)
-        //indexRequest := elastic.NewBulkIndexRequest()
-        //indexRequest.Index(dbName).Type("trace").Doc(doc)
-        //es_bulk.Add(indexRequest)
+        reportChannel <- info
     }
-    bulk.Run()
-    //es_bulk.Do()
 }
 
 func GetGeoByBaseStation(lac int, cell int, mcc int) (float64, float64)  {
@@ -161,4 +154,41 @@ func GetGeoByBaseStation(lac int, cell int, mcc int) (float64, float64)  {
         }
     }
     return 0, 0
+}
+
+func dbWiter()  {
+    infoList := make([]*protocol.ReportInfo, 0)
+    go func() {
+        time.Sleep(30)
+        reportChannel <- nil
+    }()
+
+    for ;;  {
+        e := <- reportChannel
+        if e != nil {
+            infoList = append(infoList, e)
+        }
+
+        if e == nil || len(infoList) > 100 {
+            if (len(infoList) != 0) {
+                session := GetSession()
+                c := session.DB(dbName).C("detector_report")
+                bulk := c.Bulk()
+                //es_bulk := es_client.Bulk()
+                for _, info := range infoList {
+                    doc := bson.M{"ap_mac":info.ApMAC, "device_mac":info.MAC, "rssi":info.RSSI, "longitude":float64(info.Longitude) / protocol.GeoMmultiple, "latitude":float64(info.Latitude) / protocol.GeoMmultiple, "report_longitude":float64(info.ReportLongitude) / protocol.GeoMmultiple, "report_latitude":float64(info.ReportLatitude) / protocol.GeoMmultiple, "mcc":info.Mcc, "mnc":info.Mnc,
+                        "lac":info.Lac, "cell_id":info.CellId, "time":info.Time, "channel":info.Channel}
+                    bulk.Insert(doc)
+                    //indexRequest := elastic.NewBulkIndexRequest()
+                    //indexRequest.Index(dbName).Type("trace").Doc(doc)
+                    //es_bulk.Add(indexRequest)
+                }
+                bulk.Run()
+                //es_bulk.Do()
+                session.Close()
+            }
+        }
+
+    }
+
 }

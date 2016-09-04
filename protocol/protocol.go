@@ -111,6 +111,8 @@ type ReportInfo struct {
     CellId    uint16
     Channel   uint8
     Time      uint32
+
+    ApMAC string
 }
 type ReportRequest struct {
     ReportList list.List
