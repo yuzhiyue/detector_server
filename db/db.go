@@ -134,7 +134,6 @@ func UpdateDetectorLocate(mac string, info * protocol.DetectorSelfInfoReportRequ
 func SaveDetectorReport(apMac string, reportInfos * map[string]*protocol.ReportInfo)  {
     for _, info := range *reportInfos{
         info.ApMAC = apMac
-        log.Println(*info)
         if(info.Longitude == 0 || info.Latitude == 0) {
             continue
         }
@@ -176,6 +175,7 @@ func dbWiter()  {
                 bulk := c.Bulk()
                 //es_bulk := es_client.Bulk()
                 for _, info := range infoList {
+                    log.Println(*info)
                     doc := bson.M{"ap_mac":info.ApMAC, "device_mac":info.MAC, "rssi":info.RSSI, "longitude":float64(info.Longitude) / protocol.GeoMmultiple, "latitude":float64(info.Latitude) / protocol.GeoMmultiple, "report_longitude":float64(info.ReportLongitude) / protocol.GeoMmultiple, "report_latitude":float64(info.ReportLatitude) / protocol.GeoMmultiple, "mcc":info.Mcc, "mnc":info.Mnc,
                         "lac":info.Lac, "cell_id":info.CellId, "time":info.Time, "channel":info.Channel}
                     bulk.Insert(doc)
@@ -186,6 +186,7 @@ func dbWiter()  {
                 bulk.Run()
                 //es_bulk.Do()
                 session.Close()
+                infoList = make([]*protocol.ReportInfo, 0)
             }
         }
 
