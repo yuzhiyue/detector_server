@@ -60,7 +60,7 @@ func GetSession() *mgo.Session {
 
 func InitDB(db string)  {
     var err error
-    g_session, err = mgo.Dial("127.0.0.1:22522")
+    g_session, err = mgo.Dial("218.15.154.6:22522")
     if err != nil {
         panic(err)
     }
