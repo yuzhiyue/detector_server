@@ -123,6 +123,7 @@ func UpdateLoginTime(mac string)  {
 }
 
 func UpdateDetectorLastActiveTime(mac string, time uint32)  {
+    return
     session := GetSession()
     defer session.Close()
     c := session.DB(dbName).C("detector_info")
@@ -130,6 +131,7 @@ func UpdateDetectorLastActiveTime(mac string, time uint32)  {
 }
 
 func UpdateDetectorLocate(mac string, info * protocol.DetectorSelfInfoReportRequest)  {
+    return
     session := GetSession()
     defer session.Close()
     c := session.DB(dbName).C("detector_info")
