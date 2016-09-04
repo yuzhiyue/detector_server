@@ -9,6 +9,11 @@ import (
     "detector_server/protocol"
 )
 
+type LastActiveTimeRequest struct {
+    MAC string;
+    time uint32;
+}
+var lastActiveTimeRequestChannel chan *LastActiveTimeRequest
 var reportChannel chan *protocol.ReportInfo
 var es_client *elastic.Client
 func InitES() {
@@ -69,6 +74,7 @@ func InitDB(db string)  {
     g_session.SetMode(mgo.Monotonic, true)
     dbName = db
     reportChannel = make(chan *protocol.ReportInfo, 10000)
+    lastActiveTimeRequestChannel = make(chan *LastActiveTimeRequest, 10000)
     go dbWiter();
     log.Println("connect to db succ")
 }
@@ -169,6 +175,7 @@ func dbWiter()  {
         }
 
         if e == nil || len(infoList) > 100 {
+            continue
             if (len(infoList) != 0) {
                 session := GetSession()
                 c := session.DB(dbName).C("detector_report")
