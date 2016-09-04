@@ -123,7 +123,6 @@ func UpdateLoginTime(mac string)  {
 }
 
 func UpdateDetectorLastActiveTime(mac string, time uint32)  {
-    return
     session := GetSession()
     defer session.Close()
     c := session.DB(dbName).C("detector_info")
@@ -131,7 +130,6 @@ func UpdateDetectorLastActiveTime(mac string, time uint32)  {
 }
 
 func UpdateDetectorLocate(mac string, info * protocol.DetectorSelfInfoReportRequest)  {
-    return
     session := GetSession()
     defer session.Close()
     c := session.DB(dbName).C("detector_info")
@@ -176,8 +174,7 @@ func dbWiter()  {
             infoList = append(infoList, e)
         }
 
-        if e == nil || len(infoList) > 100 {
-            //continue
+        if e == nil || len(infoList) > 10 {
             if (len(infoList) != 0) {
                 session := GetSession()
                 c := session.DB(dbName).C("detector_report")
@@ -185,6 +182,7 @@ func dbWiter()  {
                 //es_bulk := es_client.Bulk()
                 for _, info := range infoList {
                     log.Println(*info)
+                    continue
                     doc := bson.M{"ap_mac":info.ApMAC, "device_mac":info.MAC, "rssi":info.RSSI, "longitude":float64(info.Longitude) / protocol.GeoMmultiple, "latitude":float64(info.Latitude) / protocol.GeoMmultiple, "report_longitude":float64(info.ReportLongitude) / protocol.GeoMmultiple, "report_latitude":float64(info.ReportLatitude) / protocol.GeoMmultiple, "mcc":info.Mcc, "mnc":info.Mnc,
                         "lac":info.Lac, "cell_id":info.CellId, "time":info.Time, "channel":info.Channel}
                     bulk.Insert(doc)
