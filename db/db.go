@@ -175,7 +175,7 @@ func dbWiter()  {
         }
 
         if e == nil || len(infoList) > 100 {
-            continue
+            //continue
             if (len(infoList) != 0) {
                 session := GetSession()
                 c := session.DB(dbName).C("detector_report")
