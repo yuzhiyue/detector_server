@@ -76,6 +76,13 @@ func OnDetectorLoginV2(cmd uint8, seq uint16, detector * Detector, request * pro
     if detector.ProtoVer >= 3 {
         newFirmware := detector.CheckNewFirmware()
         if newFirmware != "" {
+            response := protocol.LoginResponse{}
+            response.Reversed[0] = 0x0
+            response.Reversed[0] = 0x0F
+            response.ProtoVer = protocol.MaxProtoVer
+            response.Time = uint32(time.Now().Unix())
+            buff := response.Encode()
+            detector.SendMsg(cmd, seq, buff)
             detector.UpgradeFirmware("http://112.74.90.113/firmware/" + newFirmware)
             return
         }
