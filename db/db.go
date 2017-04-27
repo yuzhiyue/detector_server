@@ -7,6 +7,7 @@ import (
     "log"
     "gopkg.in/olivere/elastic.v3"
     "detector_server/protocol"
+    "database/sql"
 )
 
 type LastActiveTimeRequest struct {
@@ -16,6 +17,17 @@ type LastActiveTimeRequest struct {
 var lastActiveTimeRequestChannel chan *LastActiveTimeRequest
 var reportChannel chan *protocol.ReportInfo
 var es_client *elastic.Client
+var sqlClient *sql.DB
+
+func InitSQLDB() error {
+    sqlClient, err := sql.Open("", "")
+    if err != nil {
+        return err
+    }
+    sqlClient.Ping()
+    return nil
+}
+
 func InitES() {
     var err error
     es_client, err = elastic.NewClient(elastic.SetURL("http://120.24.7.62:29200"))
