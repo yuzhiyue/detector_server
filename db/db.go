@@ -7,7 +7,8 @@ import (
     "log"
     "gopkg.in/olivere/elastic.v3"
     "detector_server/protocol"
-    "database/sql"
+    "github.com/jinzhu/gorm"
+    _ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 type LastActiveTimeRequest struct {
@@ -17,14 +18,14 @@ type LastActiveTimeRequest struct {
 var lastActiveTimeRequestChannel chan *LastActiveTimeRequest
 var reportChannel chan *protocol.ReportInfo
 var es_client *elastic.Client
-var sqlClient *sql.DB
+
 
 func InitSQLDB() error {
-    sqlClient, err := sql.Open("", "")
+    const addr = "postgresql://218.15.154.6:26257/detector?sslmode=disable"
+    db, err := gorm.Open("postgres", addr)
     if err != nil {
-        return err
+        log.Fatal(err)
     }
-    sqlClient.Ping()
     return nil
 }
 
@@ -171,6 +172,24 @@ func GetGeoByBaseStation(lac int, cell int, mcc int) (float64, float64)  {
         }
     }
     return 0, 0
+}
+
+
+type ReportInfoRecord struct {
+    ID        uint64 `gorm:"primary_key;AUTO_INCREMENT"`
+    MAC       string `gorm:"primary_key"`
+    RSSI      uint8
+    Longitude float32
+    Latitude  float32
+    ReportLongitude float32
+    ReportLatitude  float32
+    Mcc       uint16
+    Mnc       uint8
+    Lac       uint16
+    CellId    uint16
+    Channel   uint8
+    Time      uint32
+    ApMAC     string
 }
 
 func dbWiter()  {
