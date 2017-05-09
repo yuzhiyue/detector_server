@@ -1,18 +1,18 @@
 package msg_hanler
 
 import (
-    "log"
     "time"
     "detector_server/protocol"
+    "github.com/golang/glog"
 )
 
 func OnReport(cmd uint8, seq uint16,detector *Detector, request * protocol.ReportRequest)  {
     detector.LastRecvReportTime = uint32(time.Now().Unix());
     if detector.Status != 1 {
-        log.Println("invalid detector report")
+        glog.Info("invalid detector report")
         return
     }
-    log.Println("onReport, request:", request)
+    glog.Info("onReport, request:", request)
     for e := request.ReportList.Front(); e != nil; e = e.Next() {
         info := e.Value.(*protocol.ReportInfo)
         if info.Time == 0 {

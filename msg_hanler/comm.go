@@ -5,11 +5,11 @@ import (
     "bytes"
     "encoding/binary"
     "detector_server/protocol"
-    "log"
     "encoding/hex"
     "time"
     "detector_server/db"
     "gopkg.in/mgo.v2/bson"
+    "github.com/golang/glog"
 )
 
 type ScanConf struct {
@@ -41,6 +41,7 @@ type Detector struct {
     ScanConfUpdateTime uint32
     ScanConfSendTime uint32
     FirmwareVer string
+    NeedClose bool
 }
 
 func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
@@ -59,7 +60,7 @@ func (detector * Detector)SendMsg(cmd uint8, seq uint16, msg []byte)  {
     crc16 := protocol.GenCRC16(buff.Bytes())
     binary.Write(buff, binary.BigEndian, crc16)
     detector.Conn.Write(buff.Bytes());
-    log.Println("response:", cmd, "\n", hex.Dump(buff.Bytes()))
+    glog.Info("response:", cmd, "\n", hex.Dump(buff.Bytes()))
 }
 
 func (detector * Detector)Reboot() {
@@ -70,7 +71,7 @@ func (detector * Detector)Reboot() {
     response.ProtoVer = 1
     response.Time = uint32(time.Now().Unix())
     buff := response.Encode()
-    log.Println("send reboot:", detector.MAC)
+    glog.Info("send reboot:", detector.MAC)
     detector.SendMsg(0x0B, 0, buff)
 }
 
@@ -98,7 +99,7 @@ func (detector * Detector)UpgradeFirmware(url string) {
     copy(response.FirmwareUrl[:], url)
     response.FirmwareUrl[len(url)] = 0
     buff := response.Encode()
-    log.Println("send UpgradeFirmware:", detector.MAC)
+    glog.Info("send UpgradeFirmware:", detector.MAC)
     detector.SendMsg(0x13, 0, buff)
 }
 
@@ -131,7 +132,7 @@ func (detector * Detector)SendScanConf() {
             channel.Interval = uint16(e.Interval)
         }
     }
-    log.Println("send scan conf", detector.MAC, scanConf)
+    glog.Info("send scan conf", detector.MAC, scanConf)
     buff := scanConf.Encode()
     detector.ScanConfSendTime = uint32(time.Now().Unix())
     detector.SendMsg(6, 0, buff)

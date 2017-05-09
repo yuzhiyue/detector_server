@@ -1,15 +1,15 @@
 package msg_hanler
 
 import (
-    "log"
     "gopkg.in/mgo.v2/bson"
     "time"
     "detector_server/db"
     "detector_server/protocol"
+    "github.com/golang/glog"
 )
 
 func OnDetectorLogin(cmd uint8, seq uint16, detector * Detector, request * protocol.LoginRequest) {
-    log.Println("onDetectorLogin, request:", request)
+    glog.Info("onDetectorLogin, request:", request)
     result := bson.M{}
     err := db.GetDetectorInfo(request.IMEI, &result)
     if err != nil {
@@ -35,12 +35,12 @@ func OnDetectorLogin(cmd uint8, seq uint16, detector * Detector, request * proto
     response.ProtoVer = protocol.MaxProtoVer
     response.Time = uint32(time.Now().Unix())
     buff := response.Encode()
-    log.Println("response:", buff)
+    glog.Info("response:", buff)
     detector.SendMsg(cmd, seq, buff)
 }
 
 func OnDetectorLoginV2(cmd uint8, seq uint16, detector * Detector, request * protocol.LoginRequest) {
-    log.Println("onDetectorLogin, request:", request)
+    glog.Info("onDetectorLogin, request:", request)
     result := bson.M{}
     err := db.GetDetectorInfo(request.MAC, &result)
     if err != nil {
@@ -92,7 +92,7 @@ func OnDetectorLoginV2(cmd uint8, seq uint16, detector * Detector, request * pro
     response.ProtoVer = protocol.MaxProtoVer
     response.Time = uint32(time.Now().Unix())
     buff := response.Encode()
-    log.Println("response:", buff)
+    glog.Info("response:", buff)
     detector.SendMsg(cmd, seq, buff)
     detector.SendScanConf()
 }

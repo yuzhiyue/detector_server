@@ -4,11 +4,9 @@ import (
     "gopkg.in/mgo.v2"
     "gopkg.in/mgo.v2/bson"
     "time"
-    "log"
     "gopkg.in/olivere/elastic.v3"
     "detector_server/protocol"
-    "github.com/jinzhu/gorm"
-    _ "github.com/jinzhu/gorm/dialects/postgres"
+    "github.com/golang/glog"
 )
 
 type LastActiveTimeRequest struct {
@@ -21,11 +19,11 @@ var es_client *elastic.Client
 
 
 func InitSQLDB() error {
-    const addr = "postgresql://218.15.154.6:26257/detector?sslmode=disable"
-    db, err := gorm.Open("postgres", addr)
-    if err != nil {
-        log.Fatal(err)
-    }
+    //const addr = "postgresql://218.15.154.6:26257/detector?sslmode=disable"
+    //db, err := gorm.Open("postgres", addr)
+    //if err != nil {
+    //    log.Fatal(err)
+    //}
     return nil
 }
 
@@ -89,7 +87,7 @@ func InitDB(db string)  {
     reportChannel = make(chan *protocol.ReportInfo, 10000)
     lastActiveTimeRequestChannel = make(chan *LastActiveTimeRequest, 10000)
     go dbWiter();
-    log.Println("connect to db succ")
+    glog.Info("connect to db succ")
 }
 
 func GetDetectorInfo(mac string, result interface{}) error {
@@ -212,7 +210,7 @@ func dbWiter()  {
                 bulk := c.Bulk()
                 //es_bulk := es_client.Bulk()
                 for _, info := range infoList {
-                    log.Println(*info)
+                    glog.Info(*info)
                     //continue
                     doc := bson.M{"ap_mac":info.ApMAC, "device_mac":info.MAC, "rssi":info.RSSI, "longitude":float64(info.Longitude) / protocol.GeoMmultiple, "latitude":float64(info.Latitude) / protocol.GeoMmultiple, "report_longitude":float64(info.ReportLongitude) / protocol.GeoMmultiple, "report_latitude":float64(info.ReportLatitude) / protocol.GeoMmultiple, "mcc":info.Mcc, "mnc":info.Mnc,
                         "lac":info.Lac, "cell_id":info.CellId, "time":info.Time, "channel":info.Channel}

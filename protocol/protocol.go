@@ -6,7 +6,7 @@ import (
     "fmt"
     "container/list"
     "bufio"
-    "log"
+    "github.com/golang/glog"
 )
 const GeoMmultiple = 1000000
 const MaxProtoVer = 1
@@ -152,7 +152,7 @@ func CheckCRC16(buff []byte) bool {
     binary.Read(reader, binary.BigEndian, &crc16)
     crc16_cal := Crc16(buff[:len(buff)-2])
     crc16_cal2 := Crc16(buff[:len(buff)-4])
-    log.Printf("crc check:%d, %d, %d\n", crc16, crc16_cal, crc16_cal2)
+    glog.Infof("crc check:%d, %d, %d\n", crc16, crc16_cal, crc16_cal2)
     return crc16 == crc16_cal
 }
 
