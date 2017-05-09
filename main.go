@@ -144,7 +144,7 @@ func handleConn(conn net.Conn) {
                         glog.Error("msg too big, size", header.MsgLen)
                         return
                     }
-                    glog.Error("decode header, msg len", header.MsgLen)
+                    glog.Info("decode header, msg len", header.MsgLen)
                 }
             }
             if header.MsgLen != 0 && buffUsed >= header.MsgLen {
