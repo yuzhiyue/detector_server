@@ -11,6 +11,7 @@ import (
     "detector_server/msg_hanler"
     "gopkg.in/mgo.v2/bson"
     "github.com/golang/glog"
+    "flag"
 )
 
 
@@ -178,6 +179,7 @@ func handleConn(conn net.Conn) {
 }
 
 func main()  {
+    flag.Parse()
     dbName := "detector"
     listen_address := ":10001"
     if len(os.Args) == 2 && os.Args[1] == "test_svr" {
